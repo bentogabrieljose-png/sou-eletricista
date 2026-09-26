@@ -131,15 +131,17 @@ export async function updateApplicationStatus(applicationNumber: string, status:
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   if (status === "rejected") {
-    const application = await getApplicationByNumber(applicationNumber);
-    if (!application) return undefined;
-    await db.delete(messages).where(eq(messages.applicationId, application.id));
-    await db.delete(examAttempts).where(eq(examAttempts.applicationId, application.id));
-    await db.delete(studentProgress).where(eq(studentProgress.applicationId, application.id));
-    // Removing the database reference makes the uploaded proof inaccessible through the site.
-    // The managed storage layer intentionally has no object-delete endpoint.
-    await db.delete(applications).where(eq(applications.id, application.id));
-    return undefined;
+    return db.transaction(async tx => {
+      const application = (await tx.select().from(applications).where(eq(applications.applicationNumber, applicationNumber)).limit(1))[0];
+      if (!application) return undefined;
+      await tx.delete(messages).where(eq(messages.applicationId, application.id));
+      await tx.delete(examAttempts).where(eq(examAttempts.applicationId, application.id));
+      await tx.delete(studentProgress).where(eq(studentProgress.applicationId, application.id));
+      // Removing the database reference makes the uploaded proof inaccessible through the site.
+      // The managed storage layer intentionally has no object-delete endpoint.
+      await tx.delete(applications).where(eq(applications.id, application.id));
+      return undefined;
+    });
   }
   const applicationBeforeApproval = await getApplicationByNumber(applicationNumber);
   if (!applicationBeforeApproval) return undefined;
@@ -155,17 +157,19 @@ export async function updateApplicationStatus(applicationNumber: string, status:
 export async function deleteApplicationPermanently(applicationNumber: string) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  const application = await getApplicationByNumber(applicationNumber);
-  if (!application) return { success: false as const, reason: "not_found" as const };
-  if (application.status === "approved") {
-    await db.insert(studentProgress).values({ applicationId: application.id, studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle }).onDuplicateKeyUpdate({ set: { studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle } });
-  } else {
-    await db.delete(studentProgress).where(eq(studentProgress.applicationId, application.id));
-  }
-  await db.delete(messages).where(eq(messages.applicationId, application.id));
-  await db.delete(examAttempts).where(eq(examAttempts.applicationId, application.id));
-  await db.delete(applications).where(eq(applications.id, application.id));
-  return { success: true as const, applicationNumber };
+  return db.transaction(async tx => {
+    const application = (await tx.select().from(applications).where(eq(applications.applicationNumber, applicationNumber)).limit(1))[0];
+    if (!application) return { success: false as const, reason: "not_found" as const };
+    if (application.status === "approved") {
+      await tx.insert(studentProgress).values({ applicationId: application.id, studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle }).onDuplicateKeyUpdate({ set: { studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle } });
+    } else {
+      await tx.delete(studentProgress).where(eq(studentProgress.applicationId, application.id));
+    }
+    await tx.delete(messages).where(eq(messages.applicationId, application.id));
+    await tx.delete(examAttempts).where(eq(examAttempts.applicationId, application.id));
+    await tx.delete(applications).where(eq(applications.id, application.id));
+    return { success: true as const, applicationNumber };
+  });
 }
 
 export async function getStudentByCode(accessCode: string) {
