@@ -149,7 +149,12 @@ export async function updateApplicationStatus(applicationNumber: string, status:
   await db.update(applications).set({ status, accessCode, approvedAt: status === "approved" ? new Date() : null, rejectionReason: rejectionReason || null }).where(eq(applications.applicationNumber, applicationNumber));
   if (status === "approved") {
     const application = await getApplicationByNumber(applicationNumber);
-    if (application) await db.insert(studentProgress).values({ applicationId: application.id, studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle }).onDuplicateKeyUpdate({ set: { studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle } });
+    if (application) {
+      const existingProgress = (await db.select({ id: studentProgress.id }).from(studentProgress).where(eq(studentProgress.applicationId, application.id)).limit(1))[0];
+      const snapshot = { studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle };
+      if (existingProgress) await db.update(studentProgress).set(snapshot).where(eq(studentProgress.id, existingProgress.id));
+      else await db.insert(studentProgress).values({ applicationId: application.id, ...snapshot });
+    }
   }
   return getApplicationByNumber(applicationNumber);
 }
@@ -161,7 +166,10 @@ export async function deleteApplicationPermanently(applicationNumber: string) {
     const application = (await tx.select().from(applications).where(eq(applications.applicationNumber, applicationNumber)).limit(1))[0];
     if (!application) return { success: false as const, reason: "not_found" as const };
     if (application.status === "approved") {
-      await tx.insert(studentProgress).values({ applicationId: application.id, studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle }).onDuplicateKeyUpdate({ set: { studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle } });
+      const existingProgress = (await tx.select({ id: studentProgress.id }).from(studentProgress).where(eq(studentProgress.applicationId, application.id)).limit(1))[0];
+      const snapshot = { studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle };
+      if (existingProgress) await tx.update(studentProgress).set(snapshot).where(eq(studentProgress.id, existingProgress.id));
+      else await tx.insert(studentProgress).values({ applicationId: application.id, ...snapshot });
     } else {
       await tx.delete(studentProgress).where(eq(studentProgress.applicationId, application.id));
     }
