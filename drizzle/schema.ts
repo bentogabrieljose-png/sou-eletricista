@@ -1,17 +1,7 @@
 import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
-/**
- * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
- */
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -22,7 +12,88 @@ export const users = mysqlTable("users", {
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
+export const courses = mysqlTable("courses", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 180 }).notNull().unique(),
+  description: text("description").notNull(),
+  hours: int("hours").default(12).notNull(),
+  lessonUrl: varchar("lessonUrl", { length: 500 }).notNull(),
+  coverUrl: varchar("coverUrl", { length: 500 }),
+  active: int("active").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const applications = mysqlTable("applications", {
+  id: int("id").autoincrement().primaryKey(),
+  applicationNumber: varchar("applicationNumber", { length: 32 }).notNull().unique(),
+  fullName: varchar("fullName", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  nif: varchar("nif", { length: 80 }).notNull(),
+  phone: varchar("phone", { length: 80 }).notNull(),
+  courseTitle: varchar("courseTitle", { length: 255 }).notNull(),
+  paymentMethod: varchar("paymentMethod", { length: 120 }).notNull(),
+  proofUrl: varchar("proofUrl", { length: 500 }),
+  proofKey: varchar("proofKey", { length: 500 }),
+  proofName: varchar("proofName", { length: 255 }),
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  accessCode: varchar("accessCode", { length: 32 }).unique(),
+  approvedAt: timestamp("approvedAt"),
+  rejectionReason: text("rejectionReason"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const studentProgress = mysqlTable("student_progress", {
+  id: int("id").autoincrement().primaryKey(),
+  applicationId: int("applicationId").notNull().unique(),
+  startedAt: timestamp("startedAt"),
+  accessUnlockAt: timestamp("accessUnlockAt"),
+  completedAt: timestamp("completedAt"),
+  latestScore: int("latestScore"),
+  examStatus: mysqlEnum("examStatus", ["not_started", "available", "passed", "retry"]).default("not_started").notNull(),
+  certificateStatus: mysqlEnum("certificateStatus", ["not_eligible", "pending", "approved", "rejected"]).default("not_eligible").notNull(),
+  certificateUrl: varchar("certificateUrl", { length: 500 }),
+  certificateNumber: varchar("certificateNumber", { length: 80 }),
+  qrToken: varchar("qrToken", { length: 80 }).unique(),
+  attempts: int("attempts").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const examAttempts = mysqlTable("exam_attempts", {
+  id: int("id").autoincrement().primaryKey(),
+  applicationId: int("applicationId").notNull(),
+  score: int("score").notNull(),
+  passed: int("passed").notNull(),
+  answers: text("answers").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const messages = mysqlTable("messages", {
+  id: int("id").autoincrement().primaryKey(),
+  applicationId: int("applicationId"),
+  fromRole: mysqlEnum("fromRole", ["student", "coordination"]).notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  body: text("body").notNull(),
+  status: mysqlEnum("messageStatus", ["open", "answered"]).default("open").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const contentItems = mysqlTable("content_items", {
+  id: int("id").autoincrement().primaryKey(),
+  kind: mysqlEnum("kind", ["welcome_video", "course_video", "update"]).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  body: text("body"),
+  mediaUrl: varchar("mediaUrl", { length: 500 }),
+  isPublished: int("isPublished").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
-
-// TODO: Add your tables here
+export type Application = typeof applications.$inferSelect;
+export type Course = typeof courses.$inferSelect;
+export type StudentProgress = typeof studentProgress.$inferSelect;
