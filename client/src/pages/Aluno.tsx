@@ -10,6 +10,7 @@ const LOGO = "/manus-storage/sou-eletricista-logo_a1bfc7b7.png";
 export default function Aluno() {
   const [accessCode, setAccessCode] = useState(() => localStorage.getItem("sou-eletricista-access") || "");
   const [draftCode, setDraftCode] = useState(accessCode);
+  const [lookupTimedOut, setLookupTimedOut] = useState(false);
   const [showExam, setShowExam] = useState(false);
   const [answers, setAnswers] = useState<number[]>(Array(10).fill(-1));
   const [activeTab, setActiveTab] = useState<"overview" | "messages" | "assistant">("overview");
@@ -17,7 +18,7 @@ export default function Aluno() {
   const [question, setQuestion] = useState("");
   const [messageSubject, setMessageSubject] = useState("");
   const [messageBody, setMessageBody] = useState("");
-  const studentQuery = trpc.student.getByCode.useQuery({ accessCode: accessCode || "invalid" }, { enabled: Boolean(accessCode) });
+  const studentQuery = trpc.student.getByCode.useQuery({ accessCode: accessCode || "invalid" }, { enabled: Boolean(accessCode), retry: false, refetchOnWindowFocus: false, staleTime: 30000 });
   const student = studentQuery.data;
   const examQuery = trpc.student.exam.useQuery({ accessCode: accessCode || "invalid" }, { enabled: showExam && Boolean(accessCode) });
   const messagesQuery = trpc.student.messages.useQuery({ accessCode: accessCode || "invalid" }, { enabled: activeTab === "messages" && Boolean(accessCode) });
@@ -27,6 +28,7 @@ export default function Aluno() {
   const assistant = trpc.student.assistant.useMutation({ onSuccess: data => { setChat(items => [...items, { role: "assistant", content: data.answer }]); }, onError: error => toast.error(error.message) });
 
   useEffect(() => { if (student?.application?.accessCode) localStorage.setItem("sou-eletricista-access", student.application.accessCode); }, [student]);
+  useEffect(() => { if (!accessCode || !studentQuery.isLoading) { setLookupTimedOut(false); return; } const timer = window.setTimeout(() => setLookupTimedOut(true), 8000); return () => window.clearTimeout(timer); }, [accessCode, studentQuery.isLoading]);
   const unlockAt = student?.progress?.accessUnlockAt ? new Date(student.progress.accessUnlockAt) : null;
   const isUnlocked = Boolean(unlockAt && unlockAt.getTime() <= Date.now());
   const remaining = unlockAt ? Math.max(0, unlockAt.getTime() - Date.now()) : 0;
@@ -39,7 +41,8 @@ export default function Aluno() {
   const askAssistant = (event: FormEvent) => { event.preventDefault(); if (!question.trim()) return; const userMessage = question.trim(); setQuestion(""); setChat(items => [...items, { role: "user", content: userMessage }]); assistant.mutate({ question: userMessage, history: chat }); };
   const send = (event: FormEvent) => { event.preventDefault(); if (!messageSubject || !messageBody) return toast.error("Preencha o assunto e a mensagem."); sendMessage.mutate({ accessCode, subject: messageSubject, body: messageBody }); };
 
-  if (!accessCode || (studentQuery.isFetched && !student)) return <div className="min-h-screen bg-[#f8fbff] px-4 py-10 text-[#12213a] dark:bg-[#07111f] dark:text-white"><div className="mx-auto max-w-md rounded-[2rem] border border-blue-100 bg-white p-8 text-center shadow-xl dark:border-white/10 dark:bg-white/5"><img src={LOGO} alt="Sou Eletricista" className="mx-auto h-24 w-24 rounded-full object-cover" /><p className="eyebrow mt-8">Sala de aula virtual</p><h1 className="section-title mt-3">Aceda à Área do Aluno.</h1><p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">Use o código gerado na inscrição. A entrada será ativada depois da aprovação da sua candidatura pela Coordenação.</p><form onSubmit={login} className="mt-7 space-y-3"><input className="field-input text-center font-mono uppercase" value={draftCode} onChange={e => setDraftCode(e.target.value)} placeholder="SE-2026-ABC123" /><button className="w-full rounded-full bg-[#0b45ad] px-5 py-3.5 font-extrabold text-white">Entrar na sala de aula</button></form><Link href="/" className="mt-6 inline-flex text-sm font-bold text-[#0b45ad] dark:text-[#ffd326]">Voltar ao site</Link></div></div>;
+  const lookupProblem = studentQuery.isError || lookupTimedOut || (studentQuery.isFetched && !student);
+  if (!accessCode || lookupProblem) return <div className="min-h-screen bg-[#f8fbff] px-4 py-10 text-[#12213a] dark:bg-[#07111f] dark:text-white"><div className="mx-auto max-w-md rounded-[2rem] border border-blue-100 bg-white p-8 text-center shadow-xl dark:border-white/10 dark:bg-white/5"><img src={LOGO} alt="Sou Eletricista" className="mx-auto h-24 w-24 rounded-full object-cover" /><p className="eyebrow mt-8">Sala de aula virtual</p><h1 className="section-title mt-3">Aceda à Área do Aluno.</h1>{lookupProblem && accessCode && <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm leading-6 text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">Não foi possível validar este código agora. Confirme o código e tente novamente.</p>}<p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">Use o código gerado na inscrição. A entrada será ativada depois da aprovação da sua candidatura pela Coordenação.</p><form onSubmit={login} className="mt-7 space-y-3"><input className="field-input text-center font-mono uppercase" value={draftCode} onChange={e => setDraftCode(e.target.value)} placeholder="SE-2026-ABC123" /><button className="w-full rounded-full bg-[#0b45ad] px-5 py-3.5 font-extrabold text-white">Entrar na sala de aula</button></form><Link href="/" className="mt-6 inline-flex text-sm font-bold text-[#0b45ad] dark:text-[#ffd326]">Voltar ao site</Link></div></div>;
   if (studentQuery.isLoading) return <LoadingState label="A carregar a sua sala de aula…" />;
   if (!student) return null;
 
