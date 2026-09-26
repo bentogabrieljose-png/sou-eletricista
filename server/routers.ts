@@ -3,8 +3,9 @@ import { z } from "zod";
 import { COURSE_LESSON_URL, EXAM_QUESTIONS, scoreExam } from "../shared/course";
 import { createApplication, createContent, createCourse, createMessage, getApplicationByNumber, getCertificateByToken, getStudentByCode, listApplications, listCertificateRequests, listContent, listCourses, listMessages, startCourse, submitExam, updateApplicationStatus, authorizeCertificate } from "./db";
 import { invokeLLM } from "./_core/llm";
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, COORDINATION_COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
+import { sdk } from "./_core/sdk";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 
@@ -24,6 +25,18 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    coordinationLogin: publicProcedure.input(z.object({ email: z.string().email(), pin: z.string().min(3).max(32) })).mutation(async ({ ctx, input }) => {
+      if (input.email.toLowerCase() !== "souelectricista@gmail.com" || input.pin !== "123") {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "E-mail ou PIN da Coordenação inválido." });
+      }
+      const token = await sdk.signSession({ openId: "coordination-admin", appId: "sou-eletricista-coordination", name: "Gabriel Carlos Cambinza" }, { expiresInMs: 1000 * 60 * 60 * 24 * 30 });
+      ctx.res.cookie(COORDINATION_COOKIE_NAME, token, { ...getSessionCookieOptions(ctx.req), maxAge: 1000 * 60 * 60 * 24 * 30 });
+      return { success: true } as const;
+    }),
+    coordinationLogout: publicProcedure.mutation(({ ctx }) => {
+      ctx.res.clearCookie(COORDINATION_COOKIE_NAME, { ...getSessionCookieOptions(ctx.req), maxAge: -1 });
+      return { success: true } as const;
+    }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });

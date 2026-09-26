@@ -1,4 +1,4 @@
-import { AXIOS_TIMEOUT_MS, COOKIE_NAME, ONE_YEAR_MS, decodeOAuthState } from "@shared/const";
+import { AXIOS_TIMEOUT_MS, COOKIE_NAME, COORDINATION_COOKIE_NAME, ONE_YEAR_MS, decodeOAuthState } from "@shared/const";
 import { ForbiddenError } from "@shared/_core/errors";
 import axios, { type AxiosInstance } from "axios";
 import { parse as parseCookieHeader } from "cookie";
@@ -256,8 +256,26 @@ class SDKServer {
   }
 
   async authenticateRequest(req: Request): Promise<AuthenticatedUser> {
-    // 1. Prefer the session cookie (regular OAuth login).
+    // Internal Coordination login stays inside the site and uses its own signed cookie.
     const cookies = this.parseCookies(req.headers.cookie);
+    const coordinationToken = cookies.get(COORDINATION_COOKIE_NAME);
+    const coordinationSession = await this.verifySession(coordinationToken);
+    if (coordinationSession?.openId === "coordination-admin" && coordinationSession.appId === "sou-eletricista-coordination") {
+      const now = new Date();
+      return {
+        id: -2,
+        openId: coordinationSession.openId,
+        name: coordinationSession.name || "Gabriel Carlos Cambinza",
+        email: "souelectricista@gmail.com",
+        loginMethod: "coordination",
+        role: "admin",
+        createdAt: now,
+        updatedAt: now,
+        lastSignedIn: now,
+      };
+    }
+
+    // Regular OAuth session cookie.
     let sessionToken = cookies.get(COOKIE_NAME);
 
     // 2. Fallback to the Authorization header (Preview auto-login via
