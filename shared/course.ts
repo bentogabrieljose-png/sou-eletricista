@@ -1,3 +1,4 @@
+export const PRACTICAL_LESSONS_URL = "https://drive.google.com/drive/folders/1PMYSZT335qZ0ijuuw5IEYwZEBnhdfKp2";
 export const COURSE_LESSON_URL = "https://share.minicoursegenerator.com/eletricidade-basica-para-instalacoes-residenciais-em-baixa-tensao-dc8d9d";
 
 export const EXAM_QUESTIONS = [
