@@ -4,8 +4,15 @@ import { nanoid } from "nanoid";
 import { InsertUser, applications, contentItems, courses, examAttempts, messages, studentProgress, users } from "../drizzle/schema";
 import { COURSE_LESSON_URL } from "../shared/course";
 import { ENV } from "./_core/env";
+import { readTtlCache, writeTtlCache, type TtlCacheEntry } from "./cache";
 
 let _db: ReturnType<typeof drizzle> | null = null;
+const PUBLIC_CACHE_MS = 30_000;
+let defaultCoursePromise: Promise<void> | null = null;
+type CourseRow = typeof courses.$inferSelect;
+type ContentRow = typeof contentItems.$inferSelect;
+let coursesCache: TtlCacheEntry<CourseRow[]> | null = null;
+let publicContentCache: TtlCacheEntry<ContentRow[]> | null = null;
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
@@ -47,6 +54,12 @@ export async function getUserByOpenId(openId: string) {
 }
 
 export async function ensureDefaultCourse() {
+  if (defaultCoursePromise) return defaultCoursePromise;
+  defaultCoursePromise = ensureDefaultCourseOnce().finally(() => { defaultCoursePromise = null; });
+  return defaultCoursePromise;
+}
+
+async function ensureDefaultCourseOnce() {
   const db = await getDb();
   if (!db) return;
   const existing = await db.select().from(courses).where(eq(courses.slug, "eletricidade-basica")).limit(1);
@@ -62,17 +75,22 @@ export async function ensureDefaultCourse() {
   }
 }
 
-export async function listCourses() {
+export async function listCourses(): Promise<CourseRow[]> {
+  const cached = readTtlCache(coursesCache);
+  if (cached) return cached;
   const db = await getDb();
   if (!db) return [];
   await ensureDefaultCourse();
-  return db.select().from(courses).where(eq(courses.active, 1)).orderBy(desc(courses.createdAt));
+  const value = await db.select().from(courses).where(eq(courses.active, 1)).orderBy(desc(courses.createdAt));
+  coursesCache = writeTtlCache(value, PUBLIC_CACHE_MS);
+  return value;
 }
 
 export async function createCourse(input: { title: string; slug: string; description: string; hours: number; lessonUrl: string }) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.insert(courses).values({ ...input, active: 1 });
+  coursesCache = null;
   return (await db.select().from(courses).where(eq(courses.slug, input.slug)).limit(1))[0];
 }
 
@@ -189,15 +207,20 @@ export async function createMessage(input: { applicationId?: number; fromRole: "
   return (await db.select().from(messages).orderBy(desc(messages.createdAt)).limit(1))[0];
 }
 
-export async function listContent(publicOnly = true) {
+export async function listContent(publicOnly = true): Promise<ContentRow[]> {
   const db = await getDb();
   if (!db) return [];
-  return publicOnly ? db.select().from(contentItems).where(eq(contentItems.isPublished, 1)).orderBy(desc(contentItems.createdAt)) : db.select().from(contentItems).orderBy(desc(contentItems.createdAt));
+  const cached = publicOnly ? readTtlCache(publicContentCache) : null;
+  if (cached) return cached;
+  const value = publicOnly ? await db.select().from(contentItems).where(eq(contentItems.isPublished, 1)).orderBy(desc(contentItems.createdAt)) : await db.select().from(contentItems).orderBy(desc(contentItems.createdAt));
+  if (publicOnly) publicContentCache = writeTtlCache(value, PUBLIC_CACHE_MS);
+  return value;
 }
 
 export async function createContent(input: { kind: "welcome_video" | "course_video" | "update"; title: string; body?: string; mediaUrl?: string }) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.insert(contentItems).values(input);
+  publicContentCache = null;
   return (await db.select().from(contentItems).orderBy(desc(contentItems.createdAt)).limit(1))[0];
 }

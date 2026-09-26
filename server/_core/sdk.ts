@@ -199,10 +199,7 @@ class SDKServer {
   async verifySession(
     cookieValue: string | undefined | null
   ): Promise<{ openId: string; appId: string; name: string } | null> {
-    if (!cookieValue) {
-      console.warn("[Auth] Missing session cookie");
-      return null;
-    }
+    if (!cookieValue) return null;
 
     try {
       const secretKey = this.getSessionSecret();

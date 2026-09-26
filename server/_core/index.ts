@@ -11,8 +11,16 @@ import { ensureDefaultCourse } from "../db";
 
 const app = express();
 const server = createServer(app);
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "12mb" }));
 app.use(express.urlencoded({ extended: true, limit: "12mb" }));
+app.use((req, res, next) => {
+  if (req.method === "GET" && (req.path === "/api/trpc/public.courses" || req.path === "/api/trpc/public.content")) {
+    res.setHeader("Cache-Control", "public, max-age=15, stale-while-revalidate=30");
+  }
+  next();
+});
 
 registerOAuthRoutes(app);
 registerStorageProxy(app);

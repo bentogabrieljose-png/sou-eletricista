@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { index, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -23,7 +23,7 @@ export const courses = mysqlTable("courses", {
   active: int("active").default(1).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, table => ({ activeCreatedAtIdx: index("courses_active_created_at_idx").on(table.active, table.createdAt) }));
 
 export const applications = mysqlTable("applications", {
   id: int("id").autoincrement().primaryKey(),
@@ -43,7 +43,7 @@ export const applications = mysqlTable("applications", {
   rejectionReason: text("rejectionReason"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, table => ({ statusCreatedAtIdx: index("applications_status_created_at_idx").on(table.status, table.createdAt) }));
 
 export const studentProgress = mysqlTable("student_progress", {
   id: int("id").autoincrement().primaryKey(),
@@ -60,7 +60,7 @@ export const studentProgress = mysqlTable("student_progress", {
   attempts: int("attempts").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, table => ({ certificateUpdatedAtIdx: index("student_progress_certificate_updated_at_idx").on(table.certificateStatus, table.updatedAt) }));
 
 export const examAttempts = mysqlTable("exam_attempts", {
   id: int("id").autoincrement().primaryKey(),
@@ -69,7 +69,7 @@ export const examAttempts = mysqlTable("exam_attempts", {
   passed: int("passed").notNull(),
   answers: text("answers").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, table => ({ applicationCreatedAtIdx: index("exam_attempts_application_created_at_idx").on(table.applicationId, table.createdAt) }));
 
 export const messages = mysqlTable("messages", {
   id: int("id").autoincrement().primaryKey(),
@@ -79,7 +79,7 @@ export const messages = mysqlTable("messages", {
   body: text("body").notNull(),
   status: mysqlEnum("messageStatus", ["open", "answered"]).default("open").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, table => ({ applicationCreatedAtIdx: index("messages_application_created_at_idx").on(table.applicationId, table.createdAt) }));
 
 export const contentItems = mysqlTable("content_items", {
   id: int("id").autoincrement().primaryKey(),
@@ -90,7 +90,7 @@ export const contentItems = mysqlTable("content_items", {
   isPublished: int("isPublished").default(1).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, table => ({ publishedCreatedAtIdx: index("content_published_created_at_idx").on(table.isPublished, table.createdAt) }));
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;

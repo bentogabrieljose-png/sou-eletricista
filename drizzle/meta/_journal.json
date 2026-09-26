@@ -15,6 +15,13 @@
       "when": 1790388703665,
       "tag": "0001_stale_raider",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1790405638449,
+      "tag": "0002_handy_snowbird",
+      "breakpoints": true
     }
   ]
 }
