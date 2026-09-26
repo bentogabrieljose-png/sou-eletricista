@@ -165,12 +165,7 @@ export async function deleteApplicationPermanently(applicationNumber: string) {
   return db.transaction(async tx => {
     const application = (await tx.select().from(applications).where(eq(applications.applicationNumber, applicationNumber)).limit(1))[0];
     if (!application) return { success: false as const, reason: "not_found" as const };
-    if (application.status === "approved") {
-      const existingProgress = (await tx.select({ id: studentProgress.id }).from(studentProgress).where(eq(studentProgress.applicationId, application.id)).limit(1))[0];
-      const snapshot = { studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle };
-      if (existingProgress) await tx.update(studentProgress).set(snapshot).where(eq(studentProgress.id, existingProgress.id));
-      else await tx.insert(studentProgress).values({ applicationId: application.id, ...snapshot });
-    } else {
+    if (application.status !== "approved") {
       await tx.delete(studentProgress).where(eq(studentProgress.applicationId, application.id));
     }
     await tx.delete(messages).where(eq(messages.applicationId, application.id));
