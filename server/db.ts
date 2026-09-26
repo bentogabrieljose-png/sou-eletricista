@@ -130,6 +130,17 @@ export async function listApplications() {
 export async function updateApplicationStatus(applicationNumber: string, status: "approved" | "rejected", rejectionReason?: string) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
+  if (status === "rejected") {
+    const application = await getApplicationByNumber(applicationNumber);
+    if (!application) return undefined;
+    await db.delete(messages).where(eq(messages.applicationId, application.id));
+    await db.delete(examAttempts).where(eq(examAttempts.applicationId, application.id));
+    await db.delete(studentProgress).where(eq(studentProgress.applicationId, application.id));
+    // Removing the database reference makes the uploaded proof inaccessible through the site.
+    // The managed storage layer intentionally has no object-delete endpoint.
+    await db.delete(applications).where(eq(applications.id, application.id));
+    return undefined;
+  }
   const accessCode = status === "approved" ? `ALUNO-${nanoid(8).toUpperCase()}` : undefined;
   await db.update(applications).set({ status, accessCode, approvedAt: status === "approved" ? new Date() : null, rejectionReason: rejectionReason || null }).where(eq(applications.applicationNumber, applicationNumber));
   if (status === "approved") {
