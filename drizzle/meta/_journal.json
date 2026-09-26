@@ -22,6 +22,13 @@
       "when": 1790405638449,
       "tag": "0002_handy_snowbird",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1790407524724,
+      "tag": "0003_fat_wolfpack",
+      "breakpoints": true
     }
   ]
 }

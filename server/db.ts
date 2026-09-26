@@ -145,9 +145,22 @@ export async function updateApplicationStatus(applicationNumber: string, status:
   await db.update(applications).set({ status, accessCode, approvedAt: status === "approved" ? new Date() : null, rejectionReason: rejectionReason || null }).where(eq(applications.applicationNumber, applicationNumber));
   if (status === "approved") {
     const application = await getApplicationByNumber(applicationNumber);
-    if (application) await db.insert(studentProgress).values({ applicationId: application.id }).onDuplicateKeyUpdate({ set: { applicationId: application.id } });
+    if (application) await db.insert(studentProgress).values({ applicationId: application.id, studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle }).onDuplicateKeyUpdate({ set: { studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle } });
   }
   return getApplicationByNumber(applicationNumber);
+}
+
+export async function deleteApprovedApplication(applicationNumber: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const application = await getApplicationByNumber(applicationNumber);
+  if (!application) return { success: false as const, reason: "not_found" as const };
+  if (application.status !== "approved") return { success: false as const, reason: "not_approved" as const };
+  await db.insert(studentProgress).values({ applicationId: application.id, studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle }).onDuplicateKeyUpdate({ set: { studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle } });
+  await db.delete(messages).where(eq(messages.applicationId, application.id));
+  await db.delete(examAttempts).where(eq(examAttempts.applicationId, application.id));
+  await db.delete(applications).where(eq(applications.id, application.id));
+  return { success: true as const, applicationNumber };
 }
 
 export async function getStudentByCode(accessCode: string) {
@@ -187,7 +200,8 @@ export async function submitExam(accessCode: string, score: number, answers: num
 export async function listCertificateRequests() {
   const db = await getDb();
   if (!db) return [];
-  return db.select({ progress: studentProgress, application: applications }).from(studentProgress).innerJoin(applications, eq(studentProgress.applicationId, applications.id)).where(eq(studentProgress.certificateStatus, "pending")).orderBy(desc(studentProgress.updatedAt));
+  const rows = await db.select({ progress: studentProgress, application: applications }).from(studentProgress).leftJoin(applications, eq(studentProgress.applicationId, applications.id)).where(eq(studentProgress.certificateStatus, "pending")).orderBy(desc(studentProgress.updatedAt));
+  return rows.map(row => ({ progress: row.progress, application: row.application ?? { id: row.progress.applicationId, fullName: row.progress.studentName || "Aluno", email: row.progress.studentEmail, nif: row.progress.studentNif, courseTitle: row.progress.courseTitle || "Curso", status: "approved" as const } }));
 }
 
 export async function authorizeCertificate(applicationId: number, approved: boolean) {
@@ -202,7 +216,9 @@ export async function authorizeCertificate(applicationId: number, approved: bool
 export async function getCertificateByToken(qrToken: string) {
   const db = await getDb();
   if (!db) return undefined;
-  return (await db.select({ progress: studentProgress, application: applications }).from(studentProgress).innerJoin(applications, eq(studentProgress.applicationId, applications.id)).where(and(eq(studentProgress.qrToken, qrToken), eq(studentProgress.certificateStatus, "approved"))).limit(1))[0];
+  const row = (await db.select({ progress: studentProgress, application: applications }).from(studentProgress).leftJoin(applications, eq(studentProgress.applicationId, applications.id)).where(and(eq(studentProgress.qrToken, qrToken), eq(studentProgress.certificateStatus, "approved"))).limit(1))[0];
+  if (!row) return undefined;
+  return { progress: row.progress, application: row.application ?? { id: row.progress.applicationId, fullName: row.progress.studentName || "Aluno", email: row.progress.studentEmail, nif: row.progress.studentNif, courseTitle: row.progress.courseTitle || "Curso", status: "approved" as const } };
 }
 
 export async function listMessages(applicationId?: number) {

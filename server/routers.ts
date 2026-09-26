@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { COURSE_LESSON_URL, EXAM_QUESTIONS, scoreExam } from "../shared/course";
-import { createApplication, createContent, createCourse, createMessage, getApplicationByNumber, getCertificateByToken, getStudentByCode, listApplications, listCertificateRequests, listContent, listCourses, listMessages, startCourse, submitExam, updateApplicationStatus, authorizeCertificate } from "./db";
+import { createApplication, createContent, createCourse, createMessage, deleteApprovedApplication, getApplicationByNumber, getCertificateByToken, getStudentByCode, listApplications, listCertificateRequests, listContent, listCourses, listMessages, startCourse, submitExam, updateApplicationStatus, authorizeCertificate } from "./db";
 import { invokeLLM } from "./_core/llm";
 import { COOKIE_NAME, COORDINATION_COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -88,6 +88,7 @@ export const appRouter = router({
     monitoring: adminProcedure.query(() => getRequestMetrics()),
     applications: adminProcedure.query(() => listApplications()),
     approveApplication: adminProcedure.input(z.object({ applicationNumber: z.string(), status: z.enum(["approved", "rejected"]), rejectionReason: z.string().optional() })).mutation(({ input }) => updateApplicationStatus(input.applicationNumber, input.status, input.rejectionReason)),
+    deleteApprovedApplication: adminProcedure.input(z.object({ applicationNumber: z.string() })).mutation(({ input }) => deleteApprovedApplication(input.applicationNumber)),
     certificateRequests: adminProcedure.query(() => listCertificateRequests()),
     authorizeCertificate: adminProcedure.input(z.object({ applicationId: z.number(), approved: z.boolean() })).mutation(({ input }) => authorizeCertificate(input.applicationId, input.approved)),
     messages: adminProcedure.query(() => listMessages()),

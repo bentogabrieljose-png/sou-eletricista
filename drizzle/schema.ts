@@ -48,6 +48,10 @@ export const applications = mysqlTable("applications", {
 export const studentProgress = mysqlTable("student_progress", {
   id: int("id").autoincrement().primaryKey(),
   applicationId: int("applicationId").notNull().unique(),
+  studentName: varchar("studentName", { length: 255 }),
+  studentEmail: varchar("studentEmail", { length: 320 }),
+  studentNif: varchar("studentNif", { length: 80 }),
+  courseTitle: varchar("courseTitle", { length: 255 }),
   startedAt: timestamp("startedAt"),
   accessUnlockAt: timestamp("accessUnlockAt"),
   completedAt: timestamp("completedAt"),
