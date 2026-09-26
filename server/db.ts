@@ -111,7 +111,7 @@ export async function createApplication(input: {
     proofKey = stored.key;
   }
   const { proofData: _proofData, proofType: _proofType, ...applicationFields } = input;
-  await db.insert(applications).values({ ...applicationFields, proofUrl, proofKey, applicationNumber });
+  await db.insert(applications).values({ ...applicationFields, proofUrl, proofKey, applicationNumber, accessCode: applicationNumber });
   return (await db.select().from(applications).where(eq(applications.applicationNumber, applicationNumber)).limit(1))[0];
 }
 
@@ -141,7 +141,9 @@ export async function updateApplicationStatus(applicationNumber: string, status:
     await db.delete(applications).where(eq(applications.id, application.id));
     return undefined;
   }
-  const accessCode = status === "approved" ? `ALUNO-${nanoid(8).toUpperCase()}` : undefined;
+  const applicationBeforeApproval = await getApplicationByNumber(applicationNumber);
+  if (!applicationBeforeApproval) return undefined;
+  const accessCode = status === "approved" ? (applicationBeforeApproval.accessCode || applicationBeforeApproval.applicationNumber) : undefined;
   await db.update(applications).set({ status, accessCode, approvedAt: status === "approved" ? new Date() : null, rejectionReason: rejectionReason || null }).where(eq(applications.applicationNumber, applicationNumber));
   if (status === "approved") {
     const application = await getApplicationByNumber(applicationNumber);
