@@ -150,13 +150,16 @@ export async function updateApplicationStatus(applicationNumber: string, status:
   return getApplicationByNumber(applicationNumber);
 }
 
-export async function deleteApprovedApplication(applicationNumber: string) {
+export async function deleteApplicationPermanently(applicationNumber: string) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   const application = await getApplicationByNumber(applicationNumber);
   if (!application) return { success: false as const, reason: "not_found" as const };
-  if (application.status !== "approved") return { success: false as const, reason: "not_approved" as const };
-  await db.insert(studentProgress).values({ applicationId: application.id, studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle }).onDuplicateKeyUpdate({ set: { studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle } });
+  if (application.status === "approved") {
+    await db.insert(studentProgress).values({ applicationId: application.id, studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle }).onDuplicateKeyUpdate({ set: { studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle } });
+  } else {
+    await db.delete(studentProgress).where(eq(studentProgress.applicationId, application.id));
+  }
   await db.delete(messages).where(eq(messages.applicationId, application.id));
   await db.delete(examAttempts).where(eq(examAttempts.applicationId, application.id));
   await db.delete(applications).where(eq(applications.id, application.id));
