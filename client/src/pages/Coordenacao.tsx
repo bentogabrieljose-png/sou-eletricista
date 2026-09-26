@@ -27,7 +27,7 @@ function CoordinationContent() {
   const messages = trpc.coordination.messages.useQuery(undefined, { enabled: isAdmin });
   const content = trpc.coordination.content.useQuery(undefined, { enabled: isAdmin });
   const monitoring = trpc.coordination.monitoring.useQuery(undefined, { enabled: isAdmin, refetchInterval: 5000 });
-  const approve = trpc.coordination.approveApplication.useMutation({ onSuccess: (_data, variables) => { applications.refetch(); toast.success(variables.status === "rejected" ? "Candidatura rejeitada e eliminada." : "Candidatura aprovada."); }, onError: error => toast.error(error.message) });
+  const approve = trpc.coordination.approveApplication.useMutation({ onSuccess: (data, variables) => { applications.refetch(); toast.success(variables.status === "rejected" ? "Candidatura rejeitada e eliminada." : `Candidatura aprovada. O código ${data?.accessCode || variables.applicationNumber} já está ativo na Área do Aluno.`); }, onError: error => toast.error(error.message) });
   const deleteApplication = trpc.coordination.deleteApplicationPermanently.useMutation({ onSuccess: result => { applications.refetch(); toast.success(result.success ? "Candidatura eliminada permanentemente." : "A candidatura não foi encontrada."); }, onError: error => toast.error(error.message) });
   const authorize = trpc.coordination.authorizeCertificate.useMutation({ onSuccess: () => { certificates.refetch(); toast.success("Estado do certificado atualizado."); }, onError: error => toast.error(error.message) });
   const reply = trpc.coordination.reply.useMutation({ onSuccess: () => { messages.refetch(); toast.success("Resposta enviada."); } });

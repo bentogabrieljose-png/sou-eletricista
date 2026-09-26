@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { nanoid } from "nanoid";
 import { InsertUser, applications, contentItems, courses, examAttempts, messages, studentProgress, users } from "../drizzle/schema";
@@ -178,7 +178,8 @@ export async function deleteApplicationPermanently(applicationNumber: string) {
 export async function getStudentByCode(accessCode: string) {
   const db = await getDb();
   if (!db) return undefined;
-  const application = (await db.select().from(applications).where(and(eq(applications.accessCode, accessCode), eq(applications.status, "approved"))).limit(1))[0];
+  const normalizedCode = accessCode.trim().toUpperCase();
+  const application = (await db.select().from(applications).where(and(or(eq(applications.accessCode, normalizedCode), eq(applications.applicationNumber, normalizedCode)), eq(applications.status, "approved"))).limit(1))[0];
   if (!application) return undefined;
   const progress = (await db.select().from(studentProgress).where(eq(studentProgress.applicationId, application.id)).limit(1))[0];
   return { application, progress };
