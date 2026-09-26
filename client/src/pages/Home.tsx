@@ -4,6 +4,8 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 
 const LOGO = "/manus-storage/sou-eletricista-logo_a1bfc7b7.png";
+const HERO_BACKGROUND = "/manus-storage/electricity-hero-background_79d57508.jpg";
+const SECTION_BACKGROUND = "/manus-storage/electricity-section-background_d153577d.jpg";
 
 export default function Home() {
   const { theme, toggleTheme } = useTheme();
@@ -37,6 +39,7 @@ export default function Home() {
             <Link href="/contactos" className="hover:text-[#0b58d0]">Contactos</Link>
           </nav>
           <div className="flex items-center gap-2">
+            <Link href="/contactos" className="inline-flex rounded-full border border-blue-100 px-3 py-2 text-xs font-extrabold text-[#0b45ad] lg:hidden dark:border-white/15 dark:text-white">Contactos</Link>
             <button onClick={toggleTheme} aria-label="Alternar tema" className="rounded-full border border-blue-100 p-2.5 transition hover:bg-blue-50 dark:border-white/15 dark:hover:bg-white/10">
               {theme === "dark" ? <Sun className="h-4 w-4 text-[#ffd326]" /> : <Moon className="h-4 w-4 text-[#0b45ad]" />}
             </button>
@@ -48,6 +51,7 @@ export default function Home() {
       <main>
         <section className="relative isolate">
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_78%_14%,rgba(243,189,8,.25),transparent_24%),linear-gradient(120deg,#eaf3ff_0%,#f8fbff_55%,#fff9e5_100%)] dark:bg-[radial-gradient(circle_at_78%_14%,rgba(243,189,8,.16),transparent_24%),linear-gradient(120deg,#0d2445_0%,#07111f_60%,#17264b_100%)]" />
+          <div className="pointer-events-none absolute inset-0 -z-10 bg-cover bg-center opacity-20 mix-blend-multiply dark:opacity-25 dark:mix-blend-screen" style={{ backgroundImage: `url(${HERO_BACKGROUND})` }} />
           <div className="container grid min-h-[680px] items-center gap-12 py-20 lg:grid-cols-[1.05fr_.95fr] lg:py-24">
             <div className="max-w-2xl">
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white/75 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-[#0b45ad] dark:border-white/15 dark:bg-white/10 dark:text-[#ffd326]"><span className="h-2 w-2 rounded-full bg-[#f3bd08]" /> Formação profissional a distância</div>
@@ -91,7 +95,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="como-funciona" className="bg-[#0b45ad] py-24 text-white">
+        <section id="como-funciona" className="bg-[#0b45ad] bg-cover bg-center py-24 text-white" style={{ backgroundImage: `linear-gradient(rgba(11,69,173,.9),rgba(7,31,81,.94)), url(${SECTION_BACKGROUND})` }}>
           <div className="container"><div className="grid gap-12 lg:grid-cols-[.7fr_1.3fr] lg:items-end"><div><p className="eyebrow text-[#ffd326]">Um caminho simples</p><h2 className="section-title mt-4 text-white">Da inscrição ao seu certificado.</h2></div><p className="max-w-xl text-lg leading-8 text-blue-100">Faça a inscrição, envie o comprovativo e aguarde a validação da Coordenação. Depois, estude no seu ritmo e conclua a avaliação.</p></div><div className="mt-12 grid gap-4 md:grid-cols-4">{["Inscreva-se", "Aguarde a aprovação", "Faça a formação", "Conquiste o certificado"].map((step, index) => <div key={step} className="relative rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur"><span className="font-display text-4xl font-black text-[#ffd326]">0{index + 1}</span><h3 className="mt-8 font-display text-xl font-extrabold">{step}</h3><p className="mt-3 text-sm leading-6 text-blue-100">{["Preencha os seus dados e escolha o meio de pagamento.", "A equipa verifica os dados e o comprovativo enviado.", "Aceda ao material e conte com apoio durante a jornada.", "Passe no teste e aguarde a autorização final." ][index]}</p></div>)}</div></div>
         </section>
 
