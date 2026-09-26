@@ -8,6 +8,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { sdk } from "./_core/sdk";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { getRequestMetrics } from "./metrics";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin" && ctx.user.email?.toLowerCase() !== "souelectricista@gmail.com") {
@@ -84,6 +85,7 @@ export const appRouter = router({
     }),
   }),
   coordination: router({
+    monitoring: adminProcedure.query(() => getRequestMetrics()),
     applications: adminProcedure.query(() => listApplications()),
     approveApplication: adminProcedure.input(z.object({ applicationNumber: z.string(), status: z.enum(["approved", "rejected"]), rejectionReason: z.string().optional() })).mutation(({ input }) => updateApplicationStatus(input.applicationNumber, input.status, input.rejectionReason)),
     certificateRequests: adminProcedure.query(() => listCertificateRequests()),

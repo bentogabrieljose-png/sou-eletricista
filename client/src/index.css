@@ -97,3 +97,13 @@
   header, footer, button, a:not(.print-keep) { display: none !important; }
   body { background: white !important; }
 }
+
+@keyframes loading-slide {
+  0% { transform: translateX(-140%); }
+  50% { transform: translateX(180%); }
+  100% { transform: translateX(340%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[loading-slide_1\.1s_ease-in-out_infinite\] { animation: none !important; }
+}

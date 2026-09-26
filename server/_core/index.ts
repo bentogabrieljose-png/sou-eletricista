@@ -8,6 +8,7 @@ import { createContext } from "./context";
 import { appRouter } from "../routers";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { ensureDefaultCourse } from "../db";
+import { recordRequest } from "../metrics";
 
 const app = express();
 const server = createServer(app);
@@ -16,6 +17,8 @@ app.set("trust proxy", 1);
 app.use(express.json({ limit: "12mb" }));
 app.use(express.urlencoded({ extended: true, limit: "12mb" }));
 app.use((req, res, next) => {
+  const startedAt = performance.now();
+  res.once("finish", () => recordRequest({ at: Date.now(), path: req.path, status: res.statusCode, durationMs: performance.now() - startedAt }));
   if (req.method === "GET" && (req.path === "/api/trpc/public.courses" || req.path === "/api/trpc/public.content")) {
     res.setHeader("Cache-Control", "public, max-age=15, stale-while-revalidate=30");
   }

@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { ArrowRight, BookOpen, CheckCircle2, Clock3, Moon, PlayCircle, Share2, ShieldCheck, Sun, Users } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
+import { LoadingBar } from "@/components/PageLoader";
 
 const LOGO = "/manus-storage/sou-eletricista-logo_a1bfc7b7.png";
 const HERO_BACKGROUND = "/manus-storage/electricity-hero-background_79d57508.jpg";
@@ -14,6 +15,7 @@ export default function Home() {
   const course = courses?.[0];
   const updates = content?.filter(item => item.kind === "update").slice(0, 3) ?? [];
   const videos = content?.filter(item => item.kind !== "update").slice(0, 2) ?? [];
+  const isLoading = courses === undefined || content === undefined;
 
   const shareCenter = async () => {
     const shareData = { title: "Sou Eletricista", text: "Conheça o Sou Eletricista e comece a sua formação em eletricidade.", url: window.location.origin };
@@ -34,12 +36,15 @@ export default function Home() {
           </Link>
           <nav className="hidden items-center gap-7 text-sm font-semibold lg:flex">
             <a href="#curso" className="hover:text-[#0b58d0]">O curso</a>
+            <a href="#vitrine" className="hover:text-[#0b58d0]">Vitrine</a>
             <a href="#como-funciona" className="hover:text-[#0b58d0]">Como funciona</a>
             <Link href="/aluno" className="hover:text-[#0b58d0]">Área do aluno</Link>
             <Link href="/contactos" className="hover:text-[#0b58d0]">Contactos</Link>
           </nav>
           <div className="flex items-center gap-2">
-            <Link href="/contactos" className="inline-flex rounded-full border border-blue-100 px-3 py-2 text-xs font-extrabold text-[#0b45ad] lg:hidden dark:border-white/15 dark:text-white">Contactos</Link>
+            <a href="#vitrine" className="inline-flex rounded-full border border-blue-100 px-2 py-2 text-[10px] font-extrabold text-[#0b45ad] lg:hidden dark:border-white/15 dark:text-white">Vitrine</a>
+            <Link href="/aluno" className="inline-flex rounded-full border border-blue-100 px-2 py-2 text-[10px] font-extrabold text-[#0b45ad] lg:hidden dark:border-white/15 dark:text-white">Aluno</Link>
+            <Link href="/contactos" className="inline-flex rounded-full border border-blue-100 px-2 py-2 text-[10px] font-extrabold text-[#0b45ad] lg:hidden dark:border-white/15 dark:text-white">Contactos</Link>
             <button onClick={toggleTheme} aria-label="Alternar tema" className="rounded-full border border-blue-100 p-2.5 transition hover:bg-blue-50 dark:border-white/15 dark:hover:bg-white/10">
               {theme === "dark" ? <Sun className="h-4 w-4 text-[#ffd326]" /> : <Moon className="h-4 w-4 text-[#0b45ad]" />}
             </button>
@@ -48,6 +53,7 @@ export default function Home() {
         </div>
       </header>
 
+      <LoadingBar visible={isLoading} />
       <main>
         <section className="relative isolate">
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_78%_14%,rgba(243,189,8,.25),transparent_24%),linear-gradient(120deg,#eaf3ff_0%,#f8fbff_55%,#fff9e5_100%)] dark:bg-[radial-gradient(circle_at_78%_14%,rgba(243,189,8,.16),transparent_24%),linear-gradient(120deg,#0d2445_0%,#07111f_60%,#17264b_100%)]" />
@@ -107,7 +113,7 @@ export default function Home() {
           </div>
         </section>
 
-        {(videos.length > 0 || updates.length > 0) && <section className="border-t border-blue-100 bg-white py-24 dark:border-white/10 dark:bg-white/[.03]"><div className="container"><p className="eyebrow">Vitrine</p><h2 className="section-title mt-4">Novidades do centro.</h2><div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">{[...videos, ...updates].slice(0, 3).map(item => <article key={item.id} className="overflow-hidden rounded-3xl border border-blue-100 bg-[#f8fbff] dark:border-white/10 dark:bg-white/5">{item.mediaUrl ? <div className="aspect-video bg-black"><video className="h-full w-full object-cover" controls src={item.mediaUrl} /></div> : <div className="flex aspect-video items-center justify-center bg-[#0b45ad]"><PlayCircle className="h-12 w-12 text-[#ffd326]" /></div>}<div className="p-6"><p className="text-xs font-bold uppercase tracking-widest text-[#e0a900]">{item.kind === "update" ? "Atualização" : "Vídeo"}</p><h3 className="mt-2 font-display text-xl font-extrabold">{item.title}</h3>{item.body && <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.body}</p>}</div></article>)}</div></div></section>}
+        {(videos.length > 0 || updates.length > 0) && <section id="vitrine" className="border-t border-blue-100 bg-white py-24 dark:border-white/10 dark:bg-white/[.03]"><div className="container"><p className="eyebrow">Vitrine</p><h2 className="section-title mt-4">Novidades do centro.</h2><div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">{[...videos, ...updates].slice(0, 3).map(item => <article key={item.id} className="overflow-hidden rounded-3xl border border-blue-100 bg-[#f8fbff] dark:border-white/10 dark:bg-white/5">{item.mediaUrl ? <div className="aspect-video bg-black"><video className="h-full w-full object-cover" controls src={item.mediaUrl} /></div> : <div className="flex aspect-video items-center justify-center bg-[#0b45ad]"><PlayCircle className="h-12 w-12 text-[#ffd326]" /></div>}<div className="p-6"><p className="text-xs font-bold uppercase tracking-widest text-[#e0a900]">{item.kind === "update" ? "Atualização" : "Vídeo"}</p><h3 className="mt-2 font-display text-xl font-extrabold">{item.title}</h3>{item.body && <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.body}</p>}</div></article>)}</div></div></section>}
       </main>
 
       <footer className="border-t border-blue-100 bg-[#071f51] py-12 text-white dark:border-white/10"><div className="container flex flex-col justify-between gap-8 md:flex-row md:items-end"><div className="flex items-center gap-4"><img src={LOGO} alt="Sou Eletricista" className="h-16 w-16 rounded-full object-cover" /><div><p className="font-display text-xl font-black">Sou Eletricista</p><p className="mt-1 text-sm text-blue-200">Aprender • Praticar • Conquistar</p></div></div><div className="flex flex-wrap gap-5 text-sm font-semibold text-blue-100"><Link href="/aluno">Área do aluno</Link><Link href="/coordenacao">Coordenação</Link><Link href="/contactos">Contactos</Link><a href="mailto:souelectricista@gmail.com">souelectricista@gmail.com</a></div></div></footer>
