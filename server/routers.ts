@@ -53,6 +53,11 @@ export const appRouter = router({
   }),
   student: router({
     getByCode: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(({ input }) => getStudentByCode(input.accessCode)),
+    login: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).mutation(async ({ input }) => {
+      const student = await getStudentByCode(input.accessCode);
+      if (!student) throw new TRPCError({ code: "UNAUTHORIZED", message: "Código inválido ou candidatura ainda não aprovada." });
+      return student;
+    }),
     startCourse: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).mutation(({ input }) => startCourse(input.accessCode)),
     exam: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(async ({ input }) => {
       const student = await getStudentByCode(input.accessCode);
