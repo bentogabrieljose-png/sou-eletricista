@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { COURSE_LESSON_URL, EXAM_QUESTIONS, scoreExam } from "../shared/course";
-import { createApplication, createContent, createCourse, createMessage, deleteApplicationPermanently, getApplicationByNumber, getCertificateByToken, getStudentByCode, listApplications, listCertificateRequests, listContent, listCourses, listMessages, startCourse, submitExam, updateApplicationStatus, authorizeCertificate } from "./db";
+import { addNotebookPage, authorizeCertificate, clearNotebookPage, createApplication, createContent, createCourse, createMessage, deleteApplicationPermanently, getApplicationByNumber, getCertificateByToken, getNotebook, getStudentByCode, listApplications, listCertificateRequests, listContent, listCourses, listMessages, listMaterialProgress, listNotebookVersions, markMaterialViewed, restoreNotebookVersion, saveNotebookPage, startCourse, submitExam, updateApplicationStatus, uploadNotebookImage } from "./db";
 import { invokeLLM } from "./_core/llm";
 import { COOKIE_NAME, COORDINATION_COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -59,6 +59,15 @@ export const appRouter = router({
       return student;
     }),
     startCourse: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).mutation(({ input }) => startCourse(input.accessCode)),
+    materialProgress: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(({ input }) => listMaterialProgress(input.accessCode)),
+    markMaterialViewed: publicProcedure.input(z.object({ accessCode: z.string().min(5), materialKey: z.string().min(2).max(120), materialTitle: z.string().min(2).max(255), resourceUrl: z.string().url().optional() })).mutation(({ input }) => markMaterialViewed(input.accessCode, input)),
+    notebook: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(({ input }) => getNotebook(input.accessCode)),
+    saveNotebookPage: publicProcedure.input(z.object({ accessCode: z.string().min(5), pageNumber: z.number().int().min(1).max(50), contentHtml: z.string().max(900000) })).mutation(({ input }) => saveNotebookPage(input.accessCode, input.pageNumber, input.contentHtml)),
+    addNotebookPage: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).mutation(({ input }) => addNotebookPage(input.accessCode)),
+    notebookVersions: publicProcedure.input(z.object({ accessCode: z.string().min(5), pageNumber: z.number().int().min(1).max(50) })).query(({ input }) => listNotebookVersions(input.accessCode, input.pageNumber)),
+    restoreNotebookVersion: publicProcedure.input(z.object({ accessCode: z.string().min(5), pageNumber: z.number().int().min(1).max(50), versionId: z.number().int().positive() })).mutation(({ input }) => restoreNotebookVersion(input.accessCode, input.pageNumber, input.versionId)),
+    clearNotebookPage: publicProcedure.input(z.object({ accessCode: z.string().min(5), pageNumber: z.number().int().min(1).max(50) })).mutation(({ input }) => clearNotebookPage(input.accessCode, input.pageNumber)),
+    uploadNotebookImage: publicProcedure.input(z.object({ accessCode: z.string().min(5), fileName: z.string().min(1).max(255), contentType: z.string().min(3).max(100), data: z.string().min(20).max(12000000) })).mutation(({ input }) => uploadNotebookImage(input.accessCode, input)),
     exam: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(async ({ input }) => {
       const student = await getStudentByCode(input.accessCode);
       if (!student) throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });

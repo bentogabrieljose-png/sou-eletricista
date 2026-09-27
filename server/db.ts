@@ -1,7 +1,7 @@
 import { and, desc, eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { nanoid } from "nanoid";
-import { InsertUser, applications, contentItems, courses, examAttempts, messages, studentProgress, users } from "../drizzle/schema";
+import { InsertUser, applications, contentItems, courses, examAttempts, materialProgress, messages, notebookPages, notebookVersions, notebooks, studentProgress, users } from "../drizzle/schema";
 import { COURSE_LESSON_URL } from "../shared/course";
 import { ENV } from "./_core/env";
 import { readTtlCache, writeTtlCache, type TtlCacheEntry } from "./cache";
@@ -183,6 +183,134 @@ export async function getStudentByCode(accessCode: string) {
   if (!application) return undefined;
   const progress = (await db.select().from(studentProgress).where(eq(studentProgress.applicationId, application.id)).limit(1))[0];
   return { application, progress };
+}
+
+export async function listMaterialProgress(accessCode: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const student = await getStudentByCode(accessCode);
+  if (!student) return [];
+  return db.select().from(materialProgress).where(eq(materialProgress.applicationId, student.application.id)).orderBy(desc(materialProgress.updatedAt));
+}
+
+export async function markMaterialViewed(accessCode: string, input: { materialKey: string; materialTitle: string; resourceUrl?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const student = await getStudentByCode(accessCode);
+  if (!student) return undefined;
+  const existing = (await db.select().from(materialProgress).where(and(eq(materialProgress.applicationId, student.application.id), eq(materialProgress.materialKey, input.materialKey))).limit(1))[0];
+  const now = new Date();
+  if (existing) {
+    await db.update(materialProgress).set({ materialTitle: input.materialTitle, resourceUrl: input.resourceUrl ?? null, viewedAt: now }).where(eq(materialProgress.id, existing.id));
+  } else {
+    await db.insert(materialProgress).values({ applicationId: student.application.id, materialKey: input.materialKey, materialTitle: input.materialTitle, resourceUrl: input.resourceUrl ?? null, viewedAt: now });
+  }
+  return listMaterialProgress(accessCode);
+}
+
+async function getOrCreateNotebook(accessCode: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const student = await getStudentByCode(accessCode);
+  if (!student) return undefined;
+  let notebook = (await db.select().from(notebooks).where(eq(notebooks.applicationId, student.application.id)).limit(1))[0];
+  if (!notebook) {
+    const inserted = await db.insert(notebooks).values({ applicationId: student.application.id });
+    const notebookId = Number(inserted[0].insertId);
+    notebook = (await db.select().from(notebooks).where(eq(notebooks.id, notebookId)).limit(1))[0];
+  }
+  if (!notebook) throw new Error("Não foi possível abrir o caderno");
+  const firstPage = (await db.select().from(notebookPages).where(and(eq(notebookPages.notebookId, notebook.id), eq(notebookPages.pageNumber, 1))).limit(1))[0];
+  if (!firstPage) await db.insert(notebookPages).values({ notebookId: notebook.id, pageNumber: 1, contentHtml: "" });
+  return notebook;
+}
+
+export async function getNotebook(accessCode: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const notebook = await getOrCreateNotebook(accessCode);
+  if (!notebook) return undefined;
+  const pages = await db.select().from(notebookPages).where(eq(notebookPages.notebookId, notebook.id)).orderBy(notebookPages.pageNumber);
+  return { notebook, pages };
+}
+
+function sanitizeNotebookHtml(contentHtml: string) {
+  return contentHtml
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/javascript:/gi, "");
+}
+
+export async function saveNotebookPage(accessCode: string, pageNumber: number, contentHtml: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  if (pageNumber < 1 || pageNumber > 50) throw new Error("O caderno pode ter entre 1 e 50 folhas.");
+  if (contentHtml.length > 900_000) throw new Error("Esta página ultrapassa o tamanho permitido.");
+  const safeContentHtml = sanitizeNotebookHtml(contentHtml);
+  const notebook = await getOrCreateNotebook(accessCode);
+  if (!notebook) return undefined;
+  const existing = (await db.select().from(notebookPages).where(and(eq(notebookPages.notebookId, notebook.id), eq(notebookPages.pageNumber, pageNumber))).limit(1))[0];
+  if (existing) {
+    if (existing.contentHtml !== safeContentHtml) {
+      await db.insert(notebookVersions).values({ pageId: existing.id, contentHtml: existing.contentHtml });
+      await db.update(notebookPages).set({ contentHtml: safeContentHtml }).where(eq(notebookPages.id, existing.id));
+    }
+  } else {
+    await db.insert(notebookPages).values({ notebookId: notebook.id, pageNumber, contentHtml: safeContentHtml });
+  }
+  return getNotebook(accessCode);
+}
+
+export async function addNotebookPage(accessCode: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const notebook = await getOrCreateNotebook(accessCode);
+  if (!notebook) return undefined;
+  const pages = await db.select().from(notebookPages).where(eq(notebookPages.notebookId, notebook.id)).orderBy(desc(notebookPages.pageNumber));
+  const nextPage = (pages[0]?.pageNumber ?? 0) + 1;
+  if (nextPage > 50) throw new Error("O caderno já atingiu o limite de 50 folhas.");
+  await db.insert(notebookPages).values({ notebookId: notebook.id, pageNumber: nextPage, contentHtml: "" });
+  return getNotebook(accessCode);
+}
+
+export async function listNotebookVersions(accessCode: string, pageNumber: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const notebook = await getOrCreateNotebook(accessCode);
+  if (!notebook) return [];
+  const page = (await db.select().from(notebookPages).where(and(eq(notebookPages.notebookId, notebook.id), eq(notebookPages.pageNumber, pageNumber))).limit(1))[0];
+  if (!page) return [];
+  return db.select({ id: notebookVersions.id, createdAt: notebookVersions.createdAt }).from(notebookVersions).where(eq(notebookVersions.pageId, page.id)).orderBy(desc(notebookVersions.createdAt)).limit(20);
+}
+
+export async function restoreNotebookVersion(accessCode: string, pageNumber: number, versionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const notebook = await getOrCreateNotebook(accessCode);
+  if (!notebook) return undefined;
+  const page = (await db.select().from(notebookPages).where(and(eq(notebookPages.notebookId, notebook.id), eq(notebookPages.pageNumber, pageNumber))).limit(1))[0];
+  if (!page) return undefined;
+  const version = (await db.select().from(notebookVersions).where(and(eq(notebookVersions.id, versionId), eq(notebookVersions.pageId, page.id))).limit(1))[0];
+  if (!version) return undefined;
+  await db.insert(notebookVersions).values({ pageId: page.id, contentHtml: page.contentHtml });
+  await db.update(notebookPages).set({ contentHtml: version.contentHtml }).where(eq(notebookPages.id, page.id));
+  return getNotebook(accessCode);
+}
+
+export async function clearNotebookPage(accessCode: string, pageNumber: number) {
+  return saveNotebookPage(accessCode, pageNumber, "");
+}
+
+export async function uploadNotebookImage(accessCode: string, input: { fileName: string; contentType: string; data: string }) {
+  const student = await getStudentByCode(accessCode);
+  if (!student) return undefined;
+  const raw = input.data.replace(/^data:[^;]+;base64,/, "");
+  const bytes = Buffer.from(raw, "base64");
+  if (bytes.length > 8 * 1024 * 1024) throw new Error("A imagem deve ter no máximo 8 MB.");
+  if (!input.contentType.startsWith("image/")) throw new Error("Use uma imagem JPG, PNG ou WEBP.");
+  const { storagePut } = await import("./storage");
+  const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-120) || "imagem.png";
+  return storagePut(`notebooks/${student.application.id}/${safeName}`, bytes, input.contentType);
 }
 
 export async function startCourse(accessCode: string) {

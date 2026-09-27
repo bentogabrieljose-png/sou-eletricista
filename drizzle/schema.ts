@@ -66,6 +66,42 @@ export const studentProgress = mysqlTable("student_progress", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => ({ certificateUpdatedAtIdx: index("student_progress_certificate_updated_at_idx").on(table.certificateStatus, table.updatedAt) }));
 
+
+export const materialProgress = mysqlTable("material_progress", {
+  id: int("id").autoincrement().primaryKey(),
+  applicationId: int("applicationId").notNull(),
+  materialKey: varchar("materialKey", { length: 120 }).notNull(),
+  materialTitle: varchar("materialTitle", { length: 255 }).notNull(),
+  resourceUrl: varchar("resourceUrl", { length: 500 }),
+  viewedAt: timestamp("viewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => ({ applicationMaterialIdx: index("material_progress_application_material_idx").on(table.applicationId, table.materialKey) }));
+
+export const notebooks = mysqlTable("notebooks", {
+  id: int("id").autoincrement().primaryKey(),
+  applicationId: int("applicationId").notNull().unique(),
+  title: varchar("title", { length: 255 }).default("Caderno de apontamentos").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const notebookPages = mysqlTable("notebook_pages", {
+  id: int("id").autoincrement().primaryKey(),
+  notebookId: int("notebookId").notNull(),
+  pageNumber: int("pageNumber").notNull(),
+  contentHtml: text("contentHtml").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => ({ notebookPageIdx: index("notebook_pages_notebook_page_idx").on(table.notebookId, table.pageNumber) }));
+
+export const notebookVersions = mysqlTable("notebook_versions", {
+  id: int("id").autoincrement().primaryKey(),
+  pageId: int("pageId").notNull(),
+  contentHtml: text("contentHtml").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => ({ pageCreatedIdx: index("notebook_versions_page_created_idx").on(table.pageId, table.createdAt) }));
+
 export const examAttempts = mysqlTable("exam_attempts", {
   id: int("id").autoincrement().primaryKey(),
   applicationId: int("applicationId").notNull(),
