@@ -34,17 +34,17 @@ export default function Home() {
               <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#e7ad00]">Aprender • Praticar • Conquistar</p>
             </div>
           </Link>
-          <nav className="hidden items-center gap-7 text-sm font-semibold lg:flex">
-            <a href="#curso" className="hover:text-[#0b58d0]">O curso</a>
-            <a href="#vitrine" className="hover:text-[#0b58d0]">Vitrine</a>
-            <a href="#como-funciona" className="hover:text-[#0b58d0]">Como funciona</a>
-            <Link href="/aluno" className="hover:text-[#0b58d0]">Área do aluno</Link>
-            <Link href="/contactos" className="hover:text-[#0b58d0]">Contactos</Link>
+          <nav className="hidden items-center gap-2 lg:flex">
+            <a href="#curso" className="home-nav-link">O curso</a>
+            <a href="#vitrine" className="home-nav-link">Vitrine</a>
+            <a href="#como-funciona" className="home-nav-link">Como funciona</a>
+            <Link href="/aluno" className="home-nav-link">Área do aluno</Link>
+            <Link href="/contactos" className="home-nav-link">Contactos</Link>
           </nav>
           <div className="flex items-center gap-2">
-            <a href="#vitrine" className="inline-flex rounded-full border border-blue-100 px-2 py-2 text-[10px] font-extrabold text-[#0b45ad] lg:hidden dark:border-white/15 dark:text-white">Vitrine</a>
-            <Link href="/aluno" className="inline-flex rounded-full border border-blue-100 px-2 py-2 text-[10px] font-extrabold text-[#0b45ad] lg:hidden dark:border-white/15 dark:text-white">Aluno</Link>
-            <Link href="/contactos" className="inline-flex rounded-full border border-blue-100 px-2 py-2 text-[10px] font-extrabold text-[#0b45ad] lg:hidden dark:border-white/15 dark:text-white">Contactos</Link>
+            <a href="#vitrine" className="home-nav-link home-nav-mobile lg:hidden">Vitrine</a>
+            <Link href="/aluno" className="home-nav-link home-nav-mobile lg:hidden">Aluno</Link>
+            <Link href="/contactos" className="home-nav-link home-nav-mobile lg:hidden">Contactos</Link>
             <button onClick={toggleTheme} aria-label="Alternar tema" className="rounded-full border border-blue-100 p-2.5 transition hover:bg-blue-50 dark:border-white/15 dark:hover:bg-white/10">
               {theme === "dark" ? <Sun className="h-4 w-4 text-[#ffd326]" /> : <Moon className="h-4 w-4 text-[#0b45ad]" />}
             </button>
