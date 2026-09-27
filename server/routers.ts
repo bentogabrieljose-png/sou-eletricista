@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { COURSE_LESSON_URL, EXAM_QUESTIONS, scoreExam } from "../shared/course";
-import { addNotebookPage, authorizeCertificate, clearNotebookPage, createApplication, createContent, createCourse, createMessage, deleteApplicationPermanently, getApplicationByNumber, getCertificateByToken, getNotebook, getStudentByCode, listApplications, listCertificateRequests, listContent, listCourses, listMessages, listMaterialProgress, listNotebookVersions, markMaterialViewed, restoreNotebookVersion, saveNotebookPage, startCourse, submitExam, updateApplicationStatus, uploadNotebookImage } from "./db";
+import { addNotebookPage, authorizeCertificate, clearNotebookPage, createApplication, createContent, createCourse, createMessage, deleteApplicationPermanently, deleteStudentDataPermanently, getApplicationByNumber, getCertificateByToken, getNotebook, getStudentByCode, listApplications, listCertificateRequests, listContent, listCourses, listMessages, listMaterialProgress, listNotebookVersions, listIssuedCertificates, markMaterialViewed, restoreNotebookVersion, saveNotebookPage, startCourse, submitExam, updateApplicationStatus, uploadNotebookImage } from "./db";
 import { invokeLLM } from "./_core/llm";
 import { COOKIE_NAME, COORDINATION_COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -104,6 +104,8 @@ export const appRouter = router({
     approveApplication: adminProcedure.input(z.object({ applicationNumber: z.string(), status: z.enum(["approved", "rejected"]), rejectionReason: z.string().optional() })).mutation(({ input }) => updateApplicationStatus(input.applicationNumber, input.status, input.rejectionReason)),
     deleteApplicationPermanently: adminProcedure.input(z.object({ applicationNumber: z.string() })).mutation(({ input }) => deleteApplicationPermanently(input.applicationNumber)),
     certificateRequests: adminProcedure.query(() => listCertificateRequests()),
+    issuedCertificates: adminProcedure.query(() => listIssuedCertificates()),
+    deleteStudentDataPermanently: adminProcedure.input(z.object({ applicationId: z.number().int().positive() })).mutation(({ input }) => deleteStudentDataPermanently(input.applicationId)),
     authorizeCertificate: adminProcedure.input(z.object({ applicationId: z.number(), approved: z.boolean() })).mutation(({ input }) => authorizeCertificate(input.applicationId, input.approved)),
     messages: adminProcedure.query(() => listMessages()),
     reply: adminProcedure.input(z.object({ applicationId: z.number(), subject: z.string().min(2), body: z.string().min(2) })).mutation(({ input }) => createMessage({ applicationId: input.applicationId, fromRole: "coordination", subject: input.subject, body: input.body })),

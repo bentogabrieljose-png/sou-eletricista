@@ -175,6 +175,63 @@ export async function deleteApplicationPermanently(applicationNumber: string) {
   });
 }
 
+export async function listIssuedCertificates() {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select({ progress: studentProgress, application: applications })
+    .from(studentProgress)
+    .leftJoin(applications, eq(studentProgress.applicationId, applications.id))
+    .where(eq(studentProgress.certificateStatus, "approved"))
+    .orderBy(desc(studentProgress.updatedAt));
+  return rows.map(row => ({
+    progress: row.progress,
+    application: row.application ?? {
+      id: row.progress.applicationId,
+      fullName: row.progress.studentName || "Formando",
+      email: row.progress.studentEmail,
+      nif: row.progress.studentNif,
+      courseTitle: row.progress.courseTitle || "Curso",
+      status: "approved" as const,
+    },
+  }));
+}
+
+export function certificateArchiveUpdate() {
+  return {
+    studentEmail: null,
+    studentNif: null,
+    startedAt: null,
+    accessUnlockAt: null,
+    examStatus: "not_started" as const,
+    attempts: 0,
+  };
+}
+
+export async function deleteStudentDataPermanently(applicationId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return db.transaction(async tx => {
+    const progress = (await tx.select().from(studentProgress).where(eq(studentProgress.applicationId, applicationId)).limit(1))[0];
+    if (!progress) return { success: false as const, reason: "not_found" as const };
+    if (progress.certificateStatus !== "approved" || !progress.qrToken) {
+      return { success: false as const, reason: "certificate_not_issued" as const };
+    }
+    const notebook = (await tx.select({ id: notebooks.id }).from(notebooks).where(eq(notebooks.applicationId, applicationId)).limit(1))[0];
+    if (notebook) {
+      const pages = await tx.select({ id: notebookPages.id }).from(notebookPages).where(eq(notebookPages.notebookId, notebook.id));
+      for (const page of pages) await tx.delete(notebookVersions).where(eq(notebookVersions.pageId, page.id));
+      await tx.delete(notebookPages).where(eq(notebookPages.notebookId, notebook.id));
+      await tx.delete(notebooks).where(eq(notebooks.id, notebook.id));
+    }
+    await tx.delete(materialProgress).where(eq(materialProgress.applicationId, applicationId));
+    await tx.delete(examAttempts).where(eq(examAttempts.applicationId, applicationId));
+    await tx.delete(messages).where(eq(messages.applicationId, applicationId));
+    await tx.delete(applications).where(eq(applications.id, applicationId));
+    await tx.update(studentProgress).set(certificateArchiveUpdate()).where(eq(studentProgress.id, progress.id));
+    return { success: true as const, qrToken: progress.qrToken };
+  });
+}
+
 export async function getStudentByCode(accessCode: string) {
   const db = await getDb();
   if (!db) return undefined;
