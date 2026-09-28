@@ -43,6 +43,11 @@ export default function Verificar() {
       .catch(() => setQrCode(""));
   }, [data?.progress.qrToken, validationUrl]);
 
+  const printCertificate = () => {
+    if (!qrCode) return;
+    window.requestAnimationFrame(() => window.print());
+  };
+
   return (
     <div className="certificate-page min-h-screen bg-[#f8fbff] px-4 py-8 text-[#12213a] dark:bg-[#07111f] dark:text-white sm:py-10">
       <div className="mx-auto max-w-6xl">
@@ -85,7 +90,7 @@ export default function Verificar() {
               <div className="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-300">
                 <CheckCircle2 className="h-5 w-5" /> Certificado autenticado digitalmente
               </div>
-              <button onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-full bg-[#f3bd08] px-6 py-3 font-extrabold text-[#082d70]">
+              <button onClick={printCertificate} disabled={!qrCode} className="inline-flex items-center gap-2 rounded-full bg-[#f3bd08] px-6 py-3 font-extrabold text-[#082d70] disabled:cursor-wait disabled:opacity-60" title={qrCode ? "Abrir impressão e guardar em PDF" : "A preparar o QR Code…"}>
                 <Download className="h-4 w-4" /> Guardar em PDF
               </button>
             </div>

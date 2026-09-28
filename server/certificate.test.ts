@@ -15,8 +15,8 @@ describe("certificate model", () => {
     expect(CERTIFICATE_DURATION_LABEL).toBe("72 horas (3 dias)");
     expect(CERTIFICATE_DIRECTOR_NAME).toBe("Gabriel Carlos Cambinza");
     expect(CERTIFICATE_CENTER_NAME).toBe("Sou Eletricista");
-    expect(CERTIFICATE_TEMPLATE_ASSET).toContain("certificate-official-template");
-    expect(CERTIFICATE_TEMPLATE_VERSION).toContain("official-pdf");
+    expect(CERTIFICATE_TEMPLATE_ASSET).toContain("certificate-official-unsigned");
+    expect(CERTIFICATE_TEMPLATE_VERSION).toContain("official-unsigned-pdf");
   });
 
   it("preflight input contains every official certificate field", () => {
