@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import { nanoid } from "nanoid";
 import { InsertUser, applications, contentItems, courses, examAttempts, materialProgress, messages, notebookPages, notebookVersions, notebooks, studentProgress, users } from "../drizzle/schema";
 import { COURSE_LESSON_URL } from "../shared/course";
+import { CERTIFICATE_CENTER_NAME, CERTIFICATE_DIRECTOR_NAME, CERTIFICATE_DURATION_LABEL, CERTIFICATE_TEMPLATE_VERSION } from "../shared/certificate";
 import { ENV } from "./_core/env";
 import { readTtlCache, writeTtlCache, type TtlCacheEntry } from "./cache";
 
@@ -391,8 +392,32 @@ export async function submitExam(accessCode: string, score: number, answers: num
   const passed = score >= 50;
   await db.insert(examAttempts).values({ applicationId: student.application.id, score, passed: passed ? 1 : 0, answers: JSON.stringify(answers) });
   const currentAttempts = (student.progress?.attempts ?? 0) + 1;
-  await db.update(studentProgress).set({ latestScore: score, examStatus: passed ? "passed" : "retry", certificateStatus: passed ? "pending" : "not_eligible", completedAt: passed ? new Date() : null, attempts: currentAttempts }).where(eq(studentProgress.applicationId, student.application.id));
+  await db.update(studentProgress).set({ latestScore: score, examStatus: passed ? "passed" : "retry", certificateStatus: "not_eligible", completedAt: passed ? new Date() : null, attempts: currentAttempts }).where(eq(studentProgress.applicationId, student.application.id));
   return getStudentByCode(accessCode);
+}
+
+export async function saveCertificatePreflight(applicationId: number, report: { conforming: boolean; score: number; checks: string[]; issues: string[] }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(studentProgress).set({
+    certificateStatus: report.conforming ? "pending" : "not_eligible",
+    certificateAiReport: JSON.stringify({ ...report, template: CERTIFICATE_TEMPLATE_VERSION, checkedAt: new Date().toISOString() }),
+    certificateAiCheckedAt: new Date(),
+  }).where(eq(studentProgress.applicationId, applicationId));
+  return report;
+}
+
+export function certificatePreflightInput(student: { application: { fullName: string; courseTitle: string }; progress?: { latestScore: number | null } | null }, score: number) {
+  return {
+    learnerName: student.application.fullName,
+    courseTitle: student.application.courseTitle,
+    score,
+    duration: CERTIFICATE_DURATION_LABEL,
+    center: CERTIFICATE_CENTER_NAME,
+    director: CERTIFICATE_DIRECTOR_NAME,
+    template: CERTIFICATE_TEMPLATE_VERSION,
+    requiredFields: ["nome completo", "curso", "data de conclusão", "duração", "nota final", "QR Code", "site de validação", "assinatura do diretor"],
+  };
 }
 
 export async function listCertificateRequests() {

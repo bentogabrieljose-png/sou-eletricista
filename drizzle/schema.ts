@@ -58,6 +58,8 @@ export const studentProgress = mysqlTable("student_progress", {
   latestScore: int("latestScore"),
   examStatus: mysqlEnum("examStatus", ["not_started", "available", "passed", "retry"]).default("not_started").notNull(),
   certificateStatus: mysqlEnum("certificateStatus", ["not_eligible", "pending", "approved", "rejected"]).default("not_eligible").notNull(),
+  certificateAiReport: text("certificateAiReport"),
+  certificateAiCheckedAt: timestamp("certificateAiCheckedAt"),
   certificateUrl: varchar("certificateUrl", { length: 500 }),
   certificateNumber: varchar("certificateNumber", { length: 80 }),
   qrToken: varchar("qrToken", { length: 80 }).unique(),

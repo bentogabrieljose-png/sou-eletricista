@@ -6,11 +6,13 @@ import { trpc } from "@/lib/trpc";
 import {
   CERTIFICATE_CENTER_NAME,
   CERTIFICATE_DIRECTOR_NAME,
-  CERTIFICATE_DURATION_HOURS,
+  CERTIFICATE_DURATION_LABEL,
+  CERTIFICATE_TEMPLATE_ASSET,
+  CERTIFICATE_VERIFICATION_SITE,
 } from "@shared/certificate";
 
 const LOGO = "/manus-storage/sou-eletricista-logo_a1bfc7b7.png";
-const CERTIFICATE_TEMPLATE = "/manus-storage/certificate-template_4355651c.png";
+const CERTIFICATE_TEMPLATE = CERTIFICATE_TEMPLATE_ASSET;
 
 function formatDate(value: Date | string | null | undefined) {
   if (!value) return "__/__/____";
@@ -65,15 +67,14 @@ export default function Verificar() {
               <div className="certificate-cover certificate-cover-meta" />
               <div className="certificate-cover certificate-cover-validation" />
               <div className="certificate-cover certificate-cover-signature" />
-
               <div className="certificate-field certificate-name">{data.application.fullName}</div>
               <div className="certificate-field certificate-course">{data.application.courseTitle}</div>
               <div className="certificate-field certificate-date">{formatDate(data.progress.completedAt)}</div>
-              <div className="certificate-field certificate-duration">{CERTIFICATE_DURATION_HOURS} horas</div>
+              <div className="certificate-field certificate-duration">{CERTIFICATE_DURATION_LABEL}</div>
               <div className="certificate-field certificate-score">{data.progress.latestScore ?? 0}%</div>
               <div className="certificate-qr">{qrCode && <img src={qrCode} alt="QR Code de validação digital" />}</div>
               <div className="certificate-field certificate-code">{data.progress.qrToken}</div>
-              <div className="certificate-field certificate-site">{siteLabel}</div>
+              <div className="certificate-field certificate-site">{CERTIFICATE_VERIFICATION_SITE || siteLabel}</div>
               <div className="certificate-signature">
                 <span>{CERTIFICATE_DIRECTOR_NAME}</span>
                 <small>Direção · {CERTIFICATE_CENTER_NAME}</small>

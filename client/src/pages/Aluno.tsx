@@ -451,7 +451,7 @@ export default function Aluno() {
                   {student.progress?.certificateStatus === "approved"
                     ? "O seu certificado está pronto. Abra a versão imprimível e guarde-o em PDF."
                     : student.progress?.certificateStatus === "pending"
-                      ? "A Coordenação recebeu o pedido e irá validar o seu certificado."
+                      ? "A inspeção automática confirmou o modelo e os dados. O certificado aguarda agora apenas a autorização do Diretor."
                       : "Responda ao teste com atenção. Precisa de pelo menos 50% para solicitar o certificado."}
                 </p>
                 {student.progress?.certificateStatus === "approved" &&

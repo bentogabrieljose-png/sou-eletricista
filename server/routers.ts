@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { COURSE_LESSON_URL, EXAM_QUESTIONS, scoreExam } from "../shared/course";
-import { addNotebookPage, authorizeCertificate, clearNotebookPage, createApplication, createContent, createCourse, createMessage, deleteApplicationPermanently, deleteStudentDataPermanently, getApplicationByNumber, getCertificateByToken, getNotebook, getStudentByCode, listApplications, listCertificateRequests, listContent, listCourses, listMessages, listMaterialProgress, listNotebookVersions, listIssuedCertificates, markMaterialViewed, restoreNotebookVersion, saveNotebookPage, startCourse, submitExam, updateApplicationStatus, uploadNotebookImage } from "./db";
+import { addNotebookPage, authorizeCertificate, clearNotebookPage, createApplication, createContent, createCourse, createMessage, deleteApplicationPermanently, deleteStudentDataPermanently, getApplicationByNumber, getCertificateByToken, getNotebook, getStudentByCode, listApplications, listCertificateRequests, listContent, listCourses, listMessages, listMaterialProgress, listNotebookVersions, listIssuedCertificates, markMaterialViewed, restoreNotebookVersion, saveCertificatePreflight, certificatePreflightInput, saveNotebookPage, startCourse, submitExam, updateApplicationStatus, uploadNotebookImage } from "./db";
 import { invokeLLM } from "./_core/llm";
 import { COOKIE_NAME, COORDINATION_COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -75,7 +75,28 @@ export const appRouter = router({
     }),
     submitExam: publicProcedure.input(z.object({ accessCode: z.string().min(5), answers: z.array(z.number().int().min(0).max(3)).length(10) })).mutation(async ({ input }) => {
       const score = scoreExam(input.answers);
-      return submitExam(input.accessCode, score, input.answers);
+      const student = await getStudentByCode(input.accessCode);
+      const result = await submitExam(input.accessCode, score, input.answers);
+      if (!student || score < 50) return result;
+      let report = { conforming: false, score, checks: [] as string[], issues: ["A inspeção automática não foi concluída."] };
+      try {
+        const inspection = await invokeLLM({
+          model: "gpt-5-mini",
+          messages: [
+            { role: "system", content: "Você é o inspetor oficial de certificados do centro Sou Eletricista. Verifique estritamente se os dados fornecidos preenchem todos os campos obrigatórios do modelo oficial, sem inventar dados. O certificado só pode ficar pendente quando conforming=true, score é exatamente o resultado recebido, e não há issues." },
+            { role: "user", content: JSON.stringify(certificatePreflightInput(student, score)) },
+          ],
+          response_format: { type: "json_schema", json_schema: { name: "certificate_preflight", strict: true, schema: { type: "object", properties: { conforming: { type: "boolean" }, score: { type: "integer" }, checks: { type: "array", items: { type: "string" } }, issues: { type: "array", items: { type: "string" } } }, required: ["conforming", "score", "checks", "issues"], additionalProperties: false } } },
+        });
+        const content = inspection.choices?.[0]?.message?.content;
+        if (typeof content === "string") report = { ...JSON.parse(content), score };
+      } catch (error) {
+        console.warn("[Certificate] AI preflight unavailable:", error);
+      }
+      const allFieldsPresent = Boolean(student.application.fullName && student.application.courseTitle && score >= 50);
+      report.conforming = Boolean(report.conforming && report.issues.length === 0 && allFieldsPresent);
+      await saveCertificatePreflight(student.application.id, report);
+      return getStudentByCode(input.accessCode);
     }),
     messages: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(async ({ input }) => {
       const student = await getStudentByCode(input.accessCode);

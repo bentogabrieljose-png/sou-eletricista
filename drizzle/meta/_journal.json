@@ -36,6 +36,13 @@
       "when": 1790499946526,
       "tag": "0004_silly_living_mummy",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1790554005959,
+      "tag": "0005_military_queen_noir",
+      "breakpoints": true
     }
   ]
 }
