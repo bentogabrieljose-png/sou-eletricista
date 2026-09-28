@@ -396,9 +396,7 @@ export default function Aluno() {
                   className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#0b45ad] px-6 py-3.5 font-extrabold text-white disabled:opacity-60"
                 >
                   <ExternalLink className="h-4 w-4" />{" "}
-                  {student.progress?.startedAt
-                    ? "Continuar as aulas"
-                    : "Começar as aulas"}
+                  "Começar agora"
                 </button>
                 {student.progress?.startedAt && (
                   <div className="mt-7 rounded-2xl bg-[#eef5ff] p-5 dark:bg-[#0e2a56]">
@@ -665,7 +663,7 @@ export default function Aluno() {
             <FolderOpen className="h-4 w-4" />
           </span>
           <span className="max-w-28 leading-tight sm:max-w-none">
-            Drive Biblioteca
+            Explorar a biblioteca
           </span>
           <ExternalLink className="h-4 w-4 opacity-70 transition group-hover:translate-x-0.5" />
         </a>

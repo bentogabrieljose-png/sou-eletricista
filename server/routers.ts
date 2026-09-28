@@ -81,7 +81,7 @@ export const appRouter = router({
       let report = { conforming: false, score, checks: [] as string[], issues: ["A inspeção automática não foi concluída."] };
       try {
         const inspection = await invokeLLM({
-          model: "gpt-5-mini",
+          model: "gpt-5-nano",
           messages: [
             { role: "system", content: "Você é o inspetor oficial de certificados do centro Sou Eletricista. Verifique estritamente se os dados fornecidos preenchem todos os campos obrigatórios do modelo oficial, sem inventar dados. O certificado só pode ficar pendente quando conforming=true, score é exatamente o resultado recebido, e não há issues." },
             { role: "user", content: JSON.stringify(certificatePreflightInput(student, score)) },
