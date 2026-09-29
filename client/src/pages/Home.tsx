@@ -39,11 +39,13 @@ export default function Home() {
             <a href="#vitrine" className="home-nav-link">Vitrine</a>
             <a href="#como-funciona" className="home-nav-link">Como funciona</a>
             <Link href="/aluno" className="home-nav-link">Área do aluno</Link>
+            <Link href="/diretor" className="home-nav-link">Sobre o Diretor</Link>
             <Link href="/contactos" className="home-nav-link">Contactos</Link>
           </nav>
           <div className="flex items-center gap-2">
             <a href="#vitrine" className="home-nav-link home-nav-mobile lg:hidden">Vitrine</a>
             <Link href="/aluno" className="home-nav-link home-nav-mobile lg:hidden">Aluno</Link>
+            <Link href="/diretor" className="home-nav-link home-nav-mobile lg:hidden">Diretor</Link>
             <Link href="/contactos" className="home-nav-link home-nav-mobile lg:hidden">Contactos</Link>
             <button onClick={toggleTheme} aria-label="Alternar tema" className="rounded-full border border-blue-100 p-2.5 transition hover:bg-blue-50 dark:border-white/15 dark:hover:bg-white/10">
               {theme === "dark" ? <Sun className="h-4 w-4 text-[#ffd326]" /> : <Moon className="h-4 w-4 text-[#0b45ad]" />}

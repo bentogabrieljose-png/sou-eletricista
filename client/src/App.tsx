@@ -10,6 +10,7 @@ import Inscricao from "./pages/Inscricao";
 import Aluno from "./pages/Aluno";
 import NotFound from "./pages/NotFound";
 import Verificar from "./pages/Verificar";
+import SobreDiretor from "./pages/SobreDiretor";
 
 function Router() {
   return <Switch>
@@ -18,6 +19,7 @@ function Router() {
     <Route path="/aluno" component={Aluno} />
     <Route path="/coordenacao" component={Coordenacao} />
     <Route path="/contactos" component={Contactos} />
+    <Route path="/diretor" component={SobreDiretor} />
     <Route path="/validar/:token" component={Verificar} />
     <Route path="/404" component={NotFound} />
     <Route component={NotFound} />
