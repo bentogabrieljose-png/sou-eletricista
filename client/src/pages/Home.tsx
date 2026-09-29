@@ -27,7 +27,7 @@ export default function Home() {
     <div className="min-h-screen overflow-hidden bg-[#f8fbff] text-[#12213a] dark:bg-[#07111f] dark:text-white">
       <header className="sticky top-0 z-40 border-b border-blue-100/80 bg-white/90 backdrop-blur dark:border-white/10 dark:bg-[#07111f]/90">
         <div className="container flex h-20 items-center justify-between gap-5">
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/" className="flex shrink-0 items-center gap-3">
             <img src={LOGO} alt="Sou Eletricista" className="h-14 w-14 rounded-full object-cover shadow-sm" />
             <div className="hidden sm:block">
               <p className="font-display text-lg font-extrabold leading-none text-[#0b45ad] dark:text-white">Sou Eletricista</p>
