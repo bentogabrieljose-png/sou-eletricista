@@ -7,8 +7,9 @@ import { registerStorageProxy } from "./storageProxy";
 import { createContext } from "./context";
 import { appRouter } from "../routers";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { ensureDefaultCourse } from "../db";
+import { ensureDefaultCourse, getApplicationByNumber, getCertificateByToken } from "../db";
 import { recordRequest } from "../metrics";
+import { generateCertificatePdf, generateEnrollmentReceiptPdf } from "../pdf";
 
 const app = express();
 const server = createServer(app);
@@ -27,6 +28,29 @@ app.use((req, res, next) => {
 
 registerOAuthRoutes(app);
 registerStorageProxy(app);
+app.get("/api/download/certificate/:token", async (req, res) => {
+  try {
+    const certificate = await getCertificateByToken(req.params.token);
+    if (!certificate) return res.status(404).json({ error: "Certificado não encontrado." });
+    const origin = `${req.protocol}://${req.get("host")}`;
+    const pdf = await generateCertificatePdf({ fullName: certificate.application.fullName, courseTitle: certificate.application.courseTitle, completedAt: certificate.progress.completedAt, score: certificate.progress.latestScore, qrToken: certificate.progress.qrToken || req.params.token, validationUrl: `${origin}/validar/${certificate.progress.qrToken || req.params.token}` });
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="certificado-${(certificate.application.fullName || "aluno").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.pdf"`);
+    res.setHeader("Cache-Control", "private, no-store");
+    return res.send(pdf);
+  } catch (error) { console.error("[PDF] certificate generation failed", error); return res.status(500).json({ error: "Não foi possível gerar o certificado." }); }
+});
+app.get("/api/download/receipt/:applicationNumber", async (req, res) => {
+  try {
+    const application = await getApplicationByNumber(req.params.applicationNumber);
+    if (!application) return res.status(404).json({ error: "Inscrição não encontrada." });
+    const pdf = await generateEnrollmentReceiptPdf(application);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="comprovativo-inscricao-${application.applicationNumber}.pdf"`);
+    res.setHeader("Cache-Control", "private, no-store");
+    return res.send(pdf);
+  } catch (error) { console.error("[PDF] receipt generation failed", error); return res.status(500).json({ error: "Não foi possível gerar o comprovativo." }); }
+});
 app.use("/api/trpc", createExpressMiddleware({ router: appRouter, createContext }));
 
 async function startServer() {

@@ -90,9 +90,14 @@ export default function Verificar() {
               <div className="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-300">
                 <CheckCircle2 className="h-5 w-5" /> Certificado autenticado digitalmente
               </div>
-              <button onClick={printCertificate} disabled={!qrCode} className="inline-flex items-center gap-2 rounded-full bg-[#f3bd08] px-6 py-3 font-extrabold text-[#082d70] disabled:cursor-wait disabled:opacity-60" title={qrCode ? "Abrir impressão e guardar em PDF" : "A preparar o QR Code…"}>
-                <Download className="h-4 w-4" /> Guardar em PDF
-              </button>
+              <div className="flex flex-wrap gap-3">
+                <a href={`/api/download/certificate/${data.progress.qrToken}`} download className="inline-flex items-center gap-2 rounded-full bg-[#f3bd08] px-6 py-3 font-extrabold text-[#082d70]">
+                  <Download className="h-4 w-4" /> Descarregar PDF final
+                </a>
+                <button onClick={printCertificate} disabled={!qrCode} className="inline-flex items-center gap-2 rounded-full border border-blue-200 px-6 py-3 font-extrabold text-[#0b45ad] disabled:cursor-wait disabled:opacity-60 dark:border-white/20 dark:text-white" title={qrCode ? "Abrir impressão no navegador" : "A preparar o QR Code…"}>
+                  Imprimir no navegador
+                </button>
+              </div>
             </div>
           </>
         )}
