@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { COURSE_LESSON_URL, EXAM_QUESTIONS, scoreExam } from "../shared/course";
-import { addNotebookPage, authorizeCertificate, clearNotebookPage, createApplication, createContent, createCourse, createMessage, deleteApplicationPermanently, deleteStudentDataPermanently, getApplicationByNumber, getCertificateByToken, getNotebook, getStudentByCode, listApplications, listCertificateRequests, listContent, listCourses, listMessages, listMaterialProgress, listNotebookVersions, listIssuedCertificates, markMaterialViewed, restoreNotebookVersion, saveCertificatePreflight, certificatePreflightInput, saveNotebookPage, startCourse, submitExam, updateApplicationStatus, uploadNotebookImage } from "./db";
+import { addNotebookPage, authorizeCertificate, buildCertificateFallbackReport, clearNotebookPage, createApplication, createContent, createCourse, createMessage, deleteApplicationPermanently, deleteStudentDataPermanently, ensureCertificatePending, getApplicationByNumber, getCertificateByToken, getNotebook, getStudentByCode, listApplications, listCertificateRequests, listContent, listCourses, listMessages, listMaterialProgress, listNotebookVersions, listIssuedCertificates, markMaterialViewed, restoreNotebookVersion, saveCertificatePreflight, certificatePreflightInput, saveNotebookPage, startCourse, submitExam, updateApplicationStatus, uploadNotebookImage } from "./db";
 import { invokeLLM } from "./_core/llm";
 import { COOKIE_NAME, COORDINATION_COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -52,11 +52,17 @@ export const appRouter = router({
     createApplication: publicProcedure.input(applicationInput).mutation(({ input }) => createApplication(input)),
   }),
   student: router({
-    getByCode: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(({ input }) => getStudentByCode(input.accessCode)),
+    getByCode: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(async ({ input }) => {
+      const student = await getStudentByCode(input.accessCode);
+      if (!student) return undefined;
+      await ensureCertificatePending(student.application.id);
+      return (await getStudentByCode(input.accessCode)) || student;
+    }),
     login: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).mutation(async ({ input }) => {
       const student = await getStudentByCode(input.accessCode);
       if (!student) throw new TRPCError({ code: "UNAUTHORIZED", message: "Código inválido ou candidatura ainda não aprovada." });
-      return student;
+      await ensureCertificatePending(student.application.id);
+      return (await getStudentByCode(input.accessCode)) || student;
     }),
     startCourse: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).mutation(({ input }) => startCourse(input.accessCode)),
     materialProgress: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(({ input }) => listMaterialProgress(input.accessCode)),
@@ -95,6 +101,10 @@ export const appRouter = router({
       }
       const allFieldsPresent = Boolean(student.application.fullName && student.application.courseTitle && score >= 50);
       report.conforming = Boolean(report.conforming && report.issues.length === 0 && allFieldsPresent);
+      if (!report.conforming) {
+        const fallback = buildCertificateFallbackReport(student, score);
+        if (fallback.conforming) report = fallback;
+      }
       await saveCertificatePreflight(student.application.id, report);
       return getStudentByCode(input.accessCode);
     }),

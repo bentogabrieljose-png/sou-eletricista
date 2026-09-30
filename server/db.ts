@@ -420,6 +420,28 @@ export function certificatePreflightInput(student: { application: { fullName: st
   };
 }
 
+export function buildCertificateFallbackReport(student: { application: { fullName: string; courseTitle: string } }, score: number) {
+  const checks = ["Nome completo confirmado", "Curso confirmado", "Nota final confirmada", "Duração de 72 horas definida", "QR Code, site de validação e assinatura da Direção previstos"];
+  const issues = [
+    !student.application.fullName ? "Nome completo em falta." : null,
+    !student.application.courseTitle ? "Curso em falta." : null,
+    score < 50 ? "A nota mínima para certificado é 50%." : null,
+  ].filter((issue): issue is string => Boolean(issue));
+  return { conforming: issues.length === 0, score, checks, issues };
+}
+
+export async function ensureCertificatePending(applicationId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const row = (await db.select({ progress: studentProgress, application: applications }).from(studentProgress).innerJoin(applications, eq(studentProgress.applicationId, applications.id)).where(eq(studentProgress.applicationId, applicationId)).limit(1))[0];
+  if (!row || row.application.status !== "approved" || (row.progress.latestScore ?? 0) < 50 || row.progress.certificateStatus === "approved") return row?.progress;
+  if (row.progress.certificateStatus !== "pending") {
+    const report = buildCertificateFallbackReport({ application: row.application }, row.progress.latestScore ?? 0);
+    await db.update(studentProgress).set({ certificateStatus: report.conforming ? "pending" : "not_eligible", certificateAiReport: JSON.stringify({ ...report, source: "automatic-fallback", template: CERTIFICATE_TEMPLATE_VERSION, checkedAt: new Date().toISOString() }), certificateAiCheckedAt: new Date() }).where(eq(studentProgress.applicationId, applicationId));
+  }
+  return (await db.select().from(studentProgress).where(eq(studentProgress.applicationId, applicationId)).limit(1))[0];
+}
+
 export async function listCertificateRequests() {
   const db = await getDb();
   if (!db) return [];

@@ -50,6 +50,7 @@ export default function Aluno() {
       retry: false,
       refetchOnWindowFocus: false,
       staleTime: 30000,
+      refetchInterval: 15000,
     }
   );
   const studentLogin = trpc.student.login.useMutation({
@@ -65,7 +66,7 @@ export default function Aluno() {
     },
     onError: error => toast.error(error.message),
   });
-  const student = studentSession || studentQuery.data;
+  const student = studentQuery.data || studentSession;
   const examQuery = trpc.student.exam.useQuery(
     { accessCode: accessCode || "invalid" },
     { enabled: showExam && Boolean(accessCode) }
@@ -454,12 +455,14 @@ export default function Aluno() {
                 </p>
                 {student.progress?.certificateStatus === "approved" &&
                   student.progress.qrToken && (
-                    <Link
-                      href={`/validar/${student.progress.qrToken}`}
-                      className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#f3bd08] px-5 py-3 font-extrabold text-[#082d70]"
-                    >
-                      Ver certificado <Download className="h-4 w-4" />
-                    </Link>
+                    <div className="mt-6 flex flex-wrap gap-3">
+                      <a href={`/api/download/certificate/${student.progress.qrToken}`} download className="inline-flex items-center gap-2 rounded-full bg-[#f3bd08] px-5 py-3 font-extrabold text-[#082d70]">
+                        Descarregar PDF final <Download className="h-4 w-4" />
+                      </a>
+                      <Link href={`/validar/${student.progress.qrToken}`} className="inline-flex items-center gap-2 rounded-full border border-blue-200 px-5 py-3 font-extrabold text-[#0b45ad] dark:border-white/20 dark:text-white">
+                        Ver certificado
+                      </Link>
+                    </div>
                   )}
               </div>
             </section>

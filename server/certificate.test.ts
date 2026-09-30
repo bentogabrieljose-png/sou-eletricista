@@ -7,7 +7,7 @@ import {
   CERTIFICATE_TEMPLATE_ASSET,
   CERTIFICATE_TEMPLATE_VERSION,
 } from "../shared/certificate";
-import { certificatePreflightInput } from "./db";
+import { buildCertificateFallbackReport, certificatePreflightInput } from "./db";
 
 describe("certificate model", () => {
   it("uses the official 72-hour duration and director-only signature", () => {
@@ -23,5 +23,11 @@ describe("certificate model", () => {
     const input = certificatePreflightInput({ application: { fullName: "Ana Silva", courseTitle: "Electricidade de Construção Civil" }, progress: { latestScore: 100 } }, 100);
     expect(input.requiredFields).toEqual(expect.arrayContaining(["nome completo", "curso", "data de conclusão", "duração", "nota final", "QR Code", "site de validação", "assinatura do diretor"]));
     expect(input.duration).toBe("72 horas (3 dias)");
+  });
+
+  it("creates a conforming fallback report for a passed student with complete data", () => {
+    const report = buildCertificateFallbackReport({ application: { fullName: "Ana Silva", courseTitle: "Electricidade de Construção Civil" } }, 100);
+    expect(report.conforming).toBe(true);
+    expect(report.issues).toEqual([]);
   });
 });
