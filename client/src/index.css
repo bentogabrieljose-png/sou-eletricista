@@ -152,27 +152,36 @@
   .home-nav-link:hover { transform: translateY(-2px); background: #eef5ff; color: #0b45ad; box-shadow: 0 12px 26px rgba(11, 69, 173, .14); }
   .home-nav-link:focus-visible { outline: 3px solid color-mix(in srgb, #0b45ad 35%, transparent); outline-offset: 3px; }
   .home-nav-mobile { min-height: 2.5rem; padding: .6rem .85rem; font-size: .76rem; }
-  .certificate-sheet { position: relative; width: min(100%, 596px); aspect-ratio: 596 / 839; overflow: hidden; background: white; box-shadow: 0 24px 70px rgba(8, 45, 112, .18); margin-inline: auto; }
-  .certificate-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .certificate-cover { position: absolute; z-index: 1; background: rgba(255, 255, 255, .97); }
-  .certificate-cover-name { left: 10%; top: 39.7%; width: 80%; height: 5.5%; }
-  .certificate-cover-course { left: 7%; top: 49.2%; width: 86%; height: 5.2%; }
-  .certificate-cover-meta { left: 7%; top: 64%; width: 86%; height: 5.2%; }
-  .certificate-cover-validation { left: 7%; top: 81.5%; width: 86%; height: 9.5%; }
-  .certificate-cover-signature { left: 52%; top: 74%; width: 42%; height: 10%; }
-  .certificate-field { position: absolute; z-index: 2; color: #0b398e; text-align: center; font-weight: 700; line-height: 1.1; }
-  .certificate-name { left: 13%; top: 41.4%; width: 74%; font-family: 'Space Grotesk', sans-serif; font-size: clamp(1rem, 4.2vw, 1.7rem); font-weight: 800; letter-spacing: -.035em; text-transform: uppercase; }
-  .certificate-course { left: 10%; top: 50.8%; width: 80%; font-family: 'Space Grotesk', sans-serif; font-size: clamp(.65rem, 2.6vw, 1.1rem); font-weight: 800; }
-  .certificate-date { left: 12%; top: 65.8%; width: 22%; font-size: clamp(.5rem, 1.8vw, .8rem); }
-  .certificate-duration { left: 41%; top: 65.8%; width: 19%; font-size: clamp(.5rem, 1.8vw, .8rem); }
-  .certificate-score { left: 70%; top: 65.8%; width: 18%; font-size: clamp(.5rem, 1.8vw, .8rem); }
-  .certificate-qr { position: absolute; z-index: 2; left: 10%; top: 82.6%; width: 13%; aspect-ratio: 1; background: white; padding: .12rem; }
+  .certificate-sheet { position: relative; width: min(100%, 596px); aspect-ratio: 595 / 842; overflow: hidden; background: #f8fbff; border: 3px solid #e8b207; box-shadow: 0 24px 70px rgba(8, 45, 112, .18); margin-inline: auto; color: #082d70; }
+  .certificate-sheet::after { content: ''; position: absolute; inset: 8px; border: 1px solid #0b45ad; pointer-events: none; }
+  .certificate-top-band { height: 2%; background: #e8b207; }
+  .certificate-heading { position: relative; z-index: 1; display: flex; align-items: center; gap: 4%; padding: 5% 8% 2%; }
+  .certificate-heading img { width: 17%; aspect-ratio: 1; border-radius: 50%; object-fit: cover; }
+  .certificate-heading strong { display: block; font-size: clamp(.9rem, 3vw, 1.35rem); letter-spacing: .04em; }
+  .certificate-heading span { display: block; margin-top: .25rem; font-size: clamp(.42rem, 1.35vw, .62rem); text-transform: uppercase; }
+  .certificate-title, .certificate-subtitle, .certificate-name, .certificate-copy, .certificate-course, .certificate-center-name { position: relative; z-index: 1; text-align: center; }
+  .certificate-title { margin-top: 4%; font-size: clamp(1.2rem, 5.5vw, 2rem); font-weight: 900; letter-spacing: .02em; }
+  .certificate-subtitle { margin-top: 4%; font-size: clamp(.45rem, 1.5vw, .68rem); letter-spacing: .28em; }
+  .certificate-name { margin: 4% 8% 0; color: #0b45ad; font-family: 'Space Grotesk', sans-serif; font-size: clamp(1rem, 4.5vw, 1.75rem); font-weight: 900; text-transform: uppercase; }
+  .certificate-rule { position: relative; z-index: 1; width: 76%; margin: 2% auto 0; border-top: 2px solid #e8b207; }
+  .certificate-copy { margin: 4% 7% 0; font-size: clamp(.48rem, 1.7vw, .72rem); }
+  .certificate-copy-small { margin-top: 5%; line-height: 1.6; }
+  .certificate-course { margin: 2% 8% 0; font-size: clamp(.7rem, 3vw, 1.2rem); font-weight: 900; line-height: 1.2; }
+  .certificate-center-name { display: block; margin-top: 2%; font-size: clamp(.58rem, 2vw, .9rem); }
+  .certificate-meta-grid { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2%; margin: 7% 7% 0; }
+  .certificate-meta-grid > div { min-height: 4.6rem; border: 1px solid #c8d8f0; background: #eef5ff; padding: 1rem .35rem; text-align: center; }
+  .certificate-meta-grid small, .certificate-meta-grid strong { display: block; }
+  .certificate-meta-grid small { font-size: clamp(.35rem, 1.1vw, .52rem); font-weight: 900; }
+  .certificate-meta-grid strong { margin-top: .7rem; font-size: clamp(.45rem, 1.7vw, .75rem); }
+  .certificate-lower { position: relative; z-index: 1; display: flex; align-items: end; justify-content: space-between; gap: 5%; margin: 7% 7% 0; }
+  .certificate-validation { display: flex; align-items: center; gap: 4%; min-width: 55%; }
+  .certificate-qr { width: 4.5rem; aspect-ratio: 1; flex: none; background: #fff; padding: .15rem; }
   .certificate-qr img { display: block; width: 100%; height: 100%; }
-  .certificate-code { left: 26%; top: 84.4%; width: 40%; color: #164da1; text-align: left; font-size: clamp(.4rem, 1.55vw, .68rem); }
-  .certificate-site { left: 26%; top: 88.5%; width: 45%; color: #164da1; text-align: left; font-size: clamp(.38rem, 1.45vw, .64rem); }
-  .certificate-signature { position: absolute; z-index: 2; left: 57%; top: 76.3%; width: 33%; color: #083f98; text-align: center; }
-  .certificate-signature span { display: block; font-family: 'Brush Script MT', 'Segoe Script', cursive; font-size: clamp(.7rem, 2.5vw, 1.35rem); font-style: italic; white-space: nowrap; }
-  .certificate-signature small { display: block; margin-top: .2rem; border-top: 1px solid #173f8c; padding-top: .2rem; font-size: clamp(.32rem, .95vw, .5rem); font-weight: 700; }
+  .certificate-validation strong, .certificate-validation span { display: block; font-size: clamp(.34rem, 1.15vw, .54rem); line-height: 1.55; }
+  .certificate-signature { min-width: 35%; color: #083f98; text-align: center; }
+  .certificate-signature span { display: block; font-family: 'Brush Script MT', 'Segoe Script', cursive; font-size: clamp(.62rem, 2.2vw, 1.1rem); font-style: italic; white-space: nowrap; }
+  .certificate-signature small { display: block; margin-top: .2rem; border-top: 1px solid #173f8c; padding-top: .2rem; font-size: clamp(.3rem, .9vw, .48rem); font-weight: 700; }
+  .certificate-bottom-band { position: absolute; z-index: 1; bottom: 0; left: 0; width: 100%; padding: 1.1rem .5rem; background: #061b52; color: #ffd326; text-align: center; font-size: clamp(.38rem, 1.3vw, .62rem); font-weight: 900; letter-spacing: .05em; }
   .certificate-best-student-badge { position: absolute; z-index: 3; top: 4.2%; right: 7%; display: flex; aspect-ratio: 1; width: 14%; flex-direction: column; align-items: center; justify-content: center; border: 2px solid #8f4a1f; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #d39a58, #9b5528 62%, #713514); color: #fff4d2; filter: drop-shadow(0 3px 4px rgba(72, 35, 11, .28)); clip-path: polygon(50% 0%, 61% 7%, 74% 4%, 82% 15%, 96% 18%, 93% 32%, 100% 44%, 91% 55%, 96% 69%, 83% 76%, 79% 91%, 64% 89%, 53% 100%, 42% 91%, 27% 96%, 20% 82%, 6% 78%, 9% 63%, 0% 52%, 8% 40%, 3% 26%, 17% 19%, 24% 5%, 39% 8%); text-align: center; }
   .certificate-best-student-badge span { font-size: clamp(.42rem, 1.45vw, .72rem); font-weight: 900; line-height: 1; }
   .certificate-best-student-badge small { display: block; max-width: 90%; margin-top: .12rem; font-size: clamp(.25rem, .72vw, .4rem); font-weight: 900; line-height: 1; text-transform: uppercase; }

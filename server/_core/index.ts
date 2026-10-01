@@ -32,6 +32,7 @@ app.get("/api/download/certificate/:token", async (req, res) => {
   try {
     const certificate = await getCertificateByToken(req.params.token);
     if (!certificate) return res.status(404).json({ error: "Certificado não encontrado." });
+    if (certificate.isArchived) return res.status(402).json({ error: "Este certificado está em arquivo QR. Solicite uma segunda via paga e aguarde a autorização do Diretor." });
     const origin = `${req.protocol}://${req.get("host")}`;
     const pdf = await generateCertificatePdf({ fullName: certificate.application.fullName, courseTitle: certificate.application.courseTitle, completedAt: certificate.progress.completedAt, score: certificate.progress.latestScore, isBestStudent: certificate.progress.latestScore === 100, qrToken: certificate.progress.qrToken || req.params.token, validationUrl: `${origin}/validar/${certificate.progress.qrToken || req.params.token}` });
     res.setHeader("Content-Type", "application/pdf");

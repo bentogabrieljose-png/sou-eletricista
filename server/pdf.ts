@@ -16,57 +16,88 @@ function fitSize(text: string, font: { widthOfTextAtSize: (value: string, size: 
   return size;
 }
 function topY(top: number, size: number) { return A4.height - top - size; }
-async function officialBackground() {
-  const path = CERTIFICATE_TEMPLATE_ASSET.replace(/^\/manus-storage\//, "");
+async function logoPng() {
+  const path = "sou-eletricista-logo_a1bfc7b7.png";
   const signed = await storageGetSignedUrl(path);
   const response = await fetch(signed);
-  if (!response.ok) throw new Error(`Certificate artwork unavailable (${response.status})`);
+  if (!response.ok) throw new Error(`Certificate logo unavailable (${response.status})`);
   return Buffer.from(await response.arrayBuffer());
 }
 async function qrPng(url: string) {
   const data = await QRCode.toDataURL(url, { width: 320, margin: 1 });
   return Buffer.from(data.split(",")[1], "base64");
 }
+function wrapLines(text: string, font: { widthOfTextAtSize: (value: string, size: number) => number }, size: number, maxWidth: number) {
+  const words = text.trim().split(/\s+/);
+  const lines: string[] = [];
+  let line = "";
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (line && font.widthOfTextAtSize(candidate, size) > maxWidth) { lines.push(line); line = word; }
+    else line = candidate;
+  }
+  if (line) lines.push(line);
+  return lines.slice(0, 2);
+}
 
 export async function generateCertificatePdf(input: { fullName: string; courseTitle: string; completedAt?: Date | string | null; score?: number | null; qrToken: string; validationUrl: string; isBestStudent?: boolean }) {
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([A4.width, A4.height]);
-  const background = await pdf.embedPng(await officialBackground());
-  page.drawImage(background, { x: 0, y: 0, width: A4.width, height: A4.height });
   const font = await pdf.embedFont(StandardFonts.HelveticaBold);
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
-  const center = (text: string, y: number, size: number, f = font, color = BLUE) => page.drawText(text, { x: (A4.width - f.widthOfTextAtSize(text, size)) / 2, y, size, font: f, color });
-  const centerIn = (text: string, x: number, width: number, y: number, size: number, f = font) => page.drawText(text, { x: x + (width - f.widthOfTextAtSize(text, size)) / 2, y, size, font: f, color: BLUE });
+  const blue = rgb(0.03, 0.20, 0.55);
+  const navy = rgb(0.02, 0.10, 0.32);
+  const gold = rgb(0.93, 0.70, 0.03);
+  const pale = rgb(0.97, 0.985, 1);
+  page.drawRectangle({ x: 0, y: 0, width: A4.width, height: A4.height, color: pale });
+  page.drawRectangle({ x: 14, y: 14, width: A4.width - 28, height: A4.height - 28, borderColor: gold, borderWidth: 3 });
+  page.drawRectangle({ x: 24, y: 24, width: A4.width - 48, height: A4.height - 48, borderColor: blue, borderWidth: 1 });
+  page.drawRectangle({ x: 0, y: 0, width: A4.width, height: 54, color: navy });
+  page.drawRectangle({ x: 0, y: A4.height - 16, width: A4.width, height: 16, color: gold });
+  const logo = await pdf.embedPng(await logoPng());
+  page.drawImage(logo, { x: 42, y: 690, width: 92, height: 92 });
+  page.drawText(CERTIFICATE_CENTER_NAME.toUpperCase(), { x: 150, y: 755, size: 19, font, color: blue });
+  page.drawText("CENTRO DE FORMAÇÃO TÉCNICO PROFISSIONAL", { x: 151, y: 736, size: 8.5, font: regular, color: blue });
+  const center = (text: string, y: number, size: number, f = font, color = blue, maxWidth = 520) => {
+    const actual = fitSize(text, f, maxWidth, size, Math.max(7, size * .55));
+    page.drawText(text, { x: (A4.width - f.widthOfTextAtSize(text, actual)) / 2, y, size: actual, font: f, color });
+  };
+  center("CERTIFICADO DE CONCLUSÃO", 650, 25, font, navy, 500);
+  center("ESTE CERTIFICADO É CONCEDIDO A", 610, 9, regular, blue, 400);
+  const name = input.fullName.trim().toUpperCase();
+  center(name, 566, 22, font, blue, 480);
+  page.drawLine({ start: { x: 72, y: 550 }, end: { x: 523, y: 550 }, thickness: 1.2, color: gold });
+  center("por ter concluído com aproveitamento o curso de", 510, 10, regular, blue, 460);
+  const courseLines = wrapLines(input.courseTitle, font, 18, 470);
+  courseLines.forEach((line, i) => center(line, 475 - i * 24, 18, font, navy, 470));
+  center("promovido pelo Centro de Formação Técnico Profissional", 416, 9, regular, blue, 470);
+  center(CERTIFICATE_CENTER_NAME.toUpperCase(), 397, 13, font, blue, 300);
+  center("O presente certificado comprova a sua participação, dedicação", 345, 10, regular, blue, 480);
+  center("e compromisso com a formação profissional.", 328, 10, regular, blue, 480);
   const date = input.completedAt ? new Intl.DateTimeFormat("pt-PT").format(new Date(input.completedAt)) : "__/__/____";
-  // These white blocks cover only the template's sample values; all final text is drawn as PDF text.
-  page.drawRectangle({ x: 78, y: 485, width: 440, height: 42, color: rgb(1, 1, 1) });
-  page.drawRectangle({ x: 70, y: 382, width: 455, height: 55, color: rgb(1, 1, 1) });
-  page.drawRectangle({ x: 78, y: 230, width: 440, height: 44, color: rgb(1, 1, 1) });
-  page.drawRectangle({ x: 45, y: 52, width: 330, height: 135, color: rgb(1, 1, 1) });
-  center(textFit(input.fullName.toUpperCase(), 42, 19), 497, 19);
-  const courseSize = fitSize(input.courseTitle, font, 430, 13, 8);
-  center(input.courseTitle, 400, courseSize);
-  centerIn(date, 92, 125, 247, 10, regular);
-  centerIn(CERTIFICATE_DURATION_LABEL, 235, 125, 247, 10, regular);
-  centerIn(`${input.score ?? 0}%`, 380, 125, 247, 10, regular);
+  const cells = [{ label: "DATA DE CONCLUSÃO", value: date }, { label: "CARGA HORÁRIA", value: CERTIFICATE_DURATION_LABEL }, { label: "NOTA FINAL", value: `${input.score ?? 0}%` }];
+  cells.forEach((cell, i) => {
+    const x = 58 + i * 165;
+    page.drawRectangle({ x, y: 220, width: 145, height: 78, color: rgb(0.94, 0.97, 1), borderColor: rgb(0.78, 0.85, 0.96), borderWidth: .6 });
+    page.drawText(cell.label, { x: x + 10, y: 269, size: 7.2, font, color: blue });
+    const valueSize = fitSize(cell.value, regular, 125, 11, 7);
+    page.drawText(cell.value, { x: x + (145 - regular.widthOfTextAtSize(cell.value, valueSize)) / 2, y: 241, size: valueSize, font: regular, color: navy });
+  });
   const qr = await pdf.embedPng(await qrPng(input.validationUrl));
-  page.drawImage(qr, { x: 62, y: 94, width: 68, height: 68 });
-  page.drawText("Validação digital oficial · Código", { x: 145, y: 148, size: 7.2, font: regular, color: BLUE });
-  page.drawText(input.qrToken, { x: 145, y: 136, size: 8.2, font, color: BLUE });
-  page.drawText("Verifique a autenticidade em:", { x: 145, y: 119, size: 7.2, font: regular, color: BLUE });
-  page.drawText(CERTIFICATE_VERIFICATION_SITE, { x: 145, y: 107, size: 7.4, font, color: BLUE });
-  page.drawText(CERTIFICATE_DIRECTOR_NAME, { x: 370, y: 205, size: 10, font: regular, color: BLUE });
-  page.drawLine({ start: { x: 365, y: 200 }, end: { x: 535, y: 200 }, thickness: 0.7, color: BLUE });
-  page.drawText(`Direção · ${CERTIFICATE_CENTER_NAME}`, { x: 393, y: 188, size: 6.5, font, color: BLUE });
+  page.drawImage(qr, { x: 58, y: 82, width: 82, height: 82 });
+  page.drawText("VALIDAÇÃO DIGITAL OFICIAL", { x: 158, y: 150, size: 8, font, color: blue });
+  page.drawText(`Código: ${input.qrToken}`, { x: 158, y: 134, size: 8, font: regular, color: navy });
+  page.drawText("Verifique a autenticidade em:", { x: 158, y: 116, size: 8, font: regular, color: blue });
+  page.drawText(CERTIFICATE_VERIFICATION_SITE, { x: 158, y: 101, size: 8, font, color: blue });
+  page.drawText(CERTIFICATE_DIRECTOR_NAME, { x: 370, y: 128, size: 10, font: regular, color: blue });
+  page.drawLine({ start: { x: 355, y: 119 }, end: { x: 535, y: 119 }, thickness: .8, color: blue });
+  page.drawText(`Direção · ${CERTIFICATE_CENTER_NAME}`, { x: 389, y: 105, size: 7, font, color: blue });
   if (input.isBestStudent || input.score === 100) {
-    const bronze = rgb(0.63, 0.32, 0.12);
-    const cx = 523; const cy = 755;
-    for (let i = 0; i < 8; i += 1) page.drawRectangle({ x: cx - 3, y: cy + 18, width: 6, height: 10, color: bronze, rotate: degrees(i * 45) });
-    page.drawEllipse({ x: cx, y: cy, xScale: 18, yScale: 18, color: bronze, borderColor: rgb(0.82, 0.57, 0.25), borderWidth: 1.5 });
-    page.drawEllipse({ x: cx, y: cy, xScale: 12, yScale: 12, color: rgb(0.82, 0.57, 0.25), borderColor: rgb(0.45, 0.22, 0.08), borderWidth: 1 });
-    page.drawText("100%", { x: cx - 9, y: cy - 2, size: 5.5, font, color: rgb(1, 0.95, 0.82) });
-    page.drawText("MELHOR ALUNO", { x: cx - 29, y: cy - 31, size: 5.2, font, color: bronze });
+    page.drawEllipse({ x: 518, y: 706, xScale: 25, yScale: 25, color: rgb(.63, .32, .12), borderColor: gold, borderWidth: 2 });
+    page.drawText("100%", { x: 507, y: 709, size: 7, font, color: rgb(1, .95, .82) });
+    page.drawText("MELHOR ALUNO", { x: 486, y: 675, size: 6.5, font, color: rgb(.63, .32, .12) });
   }
+  page.drawText("FORMAÇÃO DE QUALIDADE · ELETRICIDADE É FUTURO", { x: 125, y: 31, size: 8, font, color: rgb(1, .84, .15) });
   return Buffer.from(await pdf.save());
 }
 

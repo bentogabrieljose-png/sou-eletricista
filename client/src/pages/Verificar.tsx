@@ -7,12 +7,10 @@ import {
   CERTIFICATE_CENTER_NAME,
   CERTIFICATE_DIRECTOR_NAME,
   CERTIFICATE_DURATION_LABEL,
-  CERTIFICATE_TEMPLATE_ASSET,
   CERTIFICATE_VERIFICATION_SITE,
 } from "@shared/certificate";
 
 const LOGO = "/manus-storage/sou-eletricista-logo_a1bfc7b7.png";
-const CERTIFICATE_TEMPLATE = CERTIFICATE_TEMPLATE_ASSET;
 
 function formatDate(value: Date | string | null | undefined) {
   if (!value) return "__/__/____";
@@ -66,25 +64,24 @@ export default function Verificar() {
         ) : (
           <>
             <div className="certificate-sheet mt-8">
-              <img src={CERTIFICATE_TEMPLATE} alt="Modelo oficial de certificado Sou Eletricista" className="certificate-art" />
-              <div className="certificate-cover certificate-cover-name" />
-              <div className="certificate-cover certificate-cover-course" />
-              <div className="certificate-cover certificate-cover-meta" />
-              <div className="certificate-cover certificate-cover-validation" />
-              <div className="certificate-cover certificate-cover-signature" />
-              <div className="certificate-field certificate-name">{data.application.fullName}</div>
-              <div className="certificate-field certificate-course">{data.application.courseTitle}</div>
-              <div className="certificate-field certificate-date">{formatDate(data.progress.completedAt)}</div>
-              <div className="certificate-field certificate-duration">{CERTIFICATE_DURATION_LABEL}</div>
-              <div className="certificate-field certificate-score">{data.progress.latestScore ?? 0}%</div>
-              {data.progress.latestScore === 100 && <div className="certificate-best-student-badge" aria-label="Melhor aluno: 100%"><span>100%</span><small>Melhor aluno</small></div>}
-              <div className="certificate-qr">{qrCode && <img src={qrCode} alt="QR Code de validação digital" />}</div>
-              <div className="certificate-field certificate-code">{data.progress.qrToken}</div>
-              <div className="certificate-field certificate-site">{CERTIFICATE_VERIFICATION_SITE || siteLabel}</div>
-              <div className="certificate-signature">
-                <span>{CERTIFICATE_DIRECTOR_NAME}</span>
-                <small>Direção · {CERTIFICATE_CENTER_NAME}</small>
+              <div className="certificate-top-band" />
+              <div className="certificate-heading">
+                <img src={LOGO} alt={CERTIFICATE_CENTER_NAME} />
+                <div><strong>{CERTIFICATE_CENTER_NAME.toUpperCase()}</strong><span>Centro de Formação Técnico Profissional</span></div>
               </div>
+              <div className="certificate-title">CERTIFICADO DE CONCLUSÃO</div>
+              <div className="certificate-subtitle">ESTE CERTIFICADO É CONCEDIDO A</div>
+              <div className="certificate-name">{data.application.fullName}</div>
+              <div className="certificate-rule" />
+              <p className="certificate-copy">por ter concluído com aproveitamento o curso de</p>
+              <div className="certificate-course">{data.application.courseTitle}</div>
+              <p className="certificate-copy">promovido pelo Centro de Formação Técnico Profissional</p>
+              <strong className="certificate-center-name">{CERTIFICATE_CENTER_NAME.toUpperCase()}</strong>
+              <p className="certificate-copy certificate-copy-small">O presente certificado comprova a sua participação, dedicação<br />e compromisso com a formação profissional.</p>
+              <div className="certificate-meta-grid"><div><small>DATA DE CONCLUSÃO</small><strong>{formatDate(data.progress.completedAt)}</strong></div><div><small>CARGA HORÁRIA</small><strong>{CERTIFICATE_DURATION_LABEL}</strong></div><div><small>NOTA FINAL</small><strong>{data.progress.latestScore ?? 0}%</strong></div></div>
+              <div className="certificate-lower"><div className="certificate-validation"><div className="certificate-qr">{qrCode && <img src={qrCode} alt="QR Code de validação digital" />}</div><div><strong>VALIDAÇÃO DIGITAL OFICIAL</strong><span>Código: {data.progress.qrToken}</span><span>Verifique em: {CERTIFICATE_VERIFICATION_SITE || siteLabel}</span></div></div><div className="certificate-signature"><span>{CERTIFICATE_DIRECTOR_NAME}</span><small>Direção · {CERTIFICATE_CENTER_NAME}</small></div></div>
+              {data.progress.latestScore === 100 && <div className="certificate-best-student-badge" aria-label="Melhor aluno: 100%"><span>100%</span><small>Melhor aluno</small></div>}
+              <div className="certificate-bottom-band">FORMAÇÃO DE QUALIDADE · ELETRICIDADE É FUTURO</div>
             </div>
 
             <div className="print-hide mt-6 grid gap-4 rounded-[2rem] border border-blue-100 bg-white p-6 dark:border-white/10 dark:bg-white/5 sm:grid-cols-4">
@@ -99,12 +96,10 @@ export default function Verificar() {
                 <CheckCircle2 className="h-5 w-5" /> Certificado autenticado digitalmente
               </div>
               <div className="flex flex-wrap gap-3">
-                <a href={`/api/download/certificate/${data.progress.qrToken}`} download className="inline-flex items-center gap-2 rounded-full bg-[#f3bd08] px-6 py-3 font-extrabold text-[#082d70]">
-                  <Download className="h-4 w-4" /> Descarregar PDF final
-                </a>
-                <button onClick={printCertificate} disabled={!qrCode} className="inline-flex items-center gap-2 rounded-full border border-blue-200 px-6 py-3 font-extrabold text-[#0b45ad] disabled:cursor-wait disabled:opacity-60 dark:border-white/20 dark:text-white" title={qrCode ? "Abrir impressão no navegador" : "A preparar o QR Code…"}>
-                  Imprimir no navegador
-                </button>
+                {!data.isArchived && <>
+                  <a href={`/api/download/certificate/${data.progress.qrToken}`} download className="inline-flex items-center gap-2 rounded-full bg-[#f3bd08] px-6 py-3 font-extrabold text-[#082d70]"><Download className="h-4 w-4" /> Descarregar PDF final</a>
+                  <button onClick={printCertificate} disabled={!qrCode} className="inline-flex items-center gap-2 rounded-full border border-blue-200 px-6 py-3 font-extrabold text-[#0b45ad] disabled:cursor-wait disabled:opacity-60 dark:border-white/20 dark:text-white" title={qrCode ? "Abrir impressão no navegador" : "A preparar o QR Code…"}>Imprimir no navegador</button>
+                </>}
                 <Link href={`/segunda-via/${data.progress.qrToken}`} className="inline-flex items-center gap-2 rounded-full border border-amber-300 px-6 py-3 font-extrabold text-amber-700 dark:text-amber-200">
                   Segunda via do certificado
                 </Link>
@@ -113,6 +108,7 @@ export default function Verificar() {
                 </Link>
               </div>
             </div>
+            {data.isArchived && <div className="print-hide mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">Este certificado está em consulta de arquivo. Para obter outra impressão, solicite uma <strong>segunda via paga</strong>; o PDF só será liberado depois da confirmação do pagamento pelo Diretor.</div>}
           </>
         )}
       </div>

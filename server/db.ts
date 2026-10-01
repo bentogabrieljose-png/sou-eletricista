@@ -8,6 +8,7 @@ import { promisify } from "node:util";
 import { InsertUser, applications, certificateReprintRequests, contentItems, courses, examAttempts, materialProgress, messages, notebookPages, notebookVersions, notebooks, studentProgress, users } from "../drizzle/schema";
 import { COURSE_LESSON_URL, EXAM_QUESTIONS, ANSWER_KEY, examUnlockAt, type CourseExamQuestion } from "../shared/course";
 import { CERTIFICATE_CENTER_NAME, CERTIFICATE_DIRECTOR_NAME, CERTIFICATE_DURATION_LABEL, CERTIFICATE_TEMPLATE_VERSION } from "../shared/certificate";
+import { CERTIFICATE_REPRINT_FEES } from "../shared/payments";
 import { getTrainingPrice } from "../shared/pricing";
 import { ENV } from "./_core/env";
 import { readTtlCache, writeTtlCache, type TtlCacheEntry } from "./cache";
@@ -628,6 +629,7 @@ export async function getCertificateByToken(qrToken: string) {
   const row = (await db.select({ progress: studentProgress, application: applications }).from(studentProgress).leftJoin(applications, eq(studentProgress.applicationId, applications.id)).where(and(eq(studentProgress.qrToken, qrToken), eq(studentProgress.certificateStatus, "approved"))).limit(1))[0];
   if (!row) return undefined;
   return {
+    isArchived: !row.application,
     progress: { id: row.progress.id, qrToken: row.progress.qrToken, latestScore: row.progress.latestScore, startedAt: row.progress.startedAt, completedAt: row.progress.completedAt, certificateNumber: row.progress.certificateNumber },
     application: { id: row.progress.applicationId, fullName: row.application?.fullName || row.progress.studentName || "Aluno", courseTitle: row.application?.courseTitle || row.progress.courseTitle || "Curso", approvedAt: row.application?.approvedAt ?? null },
   };
@@ -636,6 +638,9 @@ export async function getCertificateByToken(qrToken: string) {
 export async function createCertificateReprint(input: { qrToken: string; requesterName: string; requesterEmail: string; paymentMethod: string; feeAmount: number; feeCurrency: string; proofData: string; proofName: string; proofType?: string }) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
+  const fee = CERTIFICATE_REPRINT_FEES.find(item => item.currency === input.feeCurrency && item.amount === input.feeAmount);
+  if (!fee) throw new Error("A taxa da segunda via deve ser exatamente 2.000 Kz ou 3 euros.");
+  if (!input.proofData || !input.proofName) throw new Error("O comprovativo de pagamento é obrigatório.");
   const row = (await db.select().from(studentProgress).where(and(eq(studentProgress.qrToken, input.qrToken), eq(studentProgress.certificateStatus, "approved"))).limit(1))[0];
   if (!row) return undefined;
   const existing = (await db.select().from(certificateReprintRequests).where(and(eq(certificateReprintRequests.progressId, row.id), or(eq(certificateReprintRequests.status, "pending"), eq(certificateReprintRequests.status, "approved")))).limit(1))[0];

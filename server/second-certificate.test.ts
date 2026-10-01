@@ -23,6 +23,16 @@ describe("second certificate workflow", () => {
     expect(server).toContain("markCertificateReprintDownloaded");
   });
 
+  it("requires exact payment proof and preserves QR-only archive behavior", () => {
+    const db = readFileSync("server/db.ts", "utf8");
+    const server = readFileSync("server/_core/index.ts", "utf8");
+    const verify = readFileSync("client/src/pages/Verificar.tsx", "utf8");
+    expect(db).toContain("A taxa da segunda via deve ser exatamente 2.000 Kz ou 3 euros.");
+    expect(db).toContain("O comprovativo de pagamento é obrigatório.");
+    expect(server).toContain("certificate.isArchived");
+    expect(verify).toContain("segunda via paga");
+  });
+
   it("wires automatic expiration cleanup at startup", () => {
     const server = readFileSync("server/_core/index.ts", "utf8");
     const db = readFileSync("server/db.ts", "utf8");
