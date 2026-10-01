@@ -1,5 +1,7 @@
 export const PRACTICAL_LESSONS_URL = "https://drive.google.com/drive/folders/1iY9KFHTVUzvBZyYjrTdJtvotqePH37vC";
 export const COURSE_LESSON_URL = "https://share.minicoursegenerator.com/eletricidade-basica-para-instalacoes-residenciais-em-baixa-tensao-dc8d9d";
+export const EXAM_UNLOCK_DELAY_MS = 12 * 60 * 60 * 1000;
+export function examUnlockAt(approvedAt: Date) { return new Date(approvedAt.getTime() + EXAM_UNLOCK_DELAY_MS); }
 
 export const EXAM_QUESTIONS = [
   { id: 1, question: "Qual é a unidade de medida da tensão elétrica?", options: ["Ampere", "Volt", "Ohm", "Watt"] },
@@ -16,6 +18,9 @@ export const EXAM_QUESTIONS = [
 
 export const ANSWER_KEY = [1, 0, 2, 1, 2, 0, 0, 0, 0, 0] as const;
 
-export function scoreExam(answers: number[]) {
-  return Math.round(answers.reduce((total, answer, index) => total + (answer === ANSWER_KEY[index] ? 10 : 0), 0));
+export type CourseExamQuestion = { question: string; options: [string, string, string, string]; correctIndex: number };
+
+export function scoreExam(answers: number[], key: readonly number[] = ANSWER_KEY) {
+  if (answers.length !== 10 || key.length !== 10) throw new Error("A avaliação deve conter 10 respostas.");
+  return Math.round(answers.reduce((total, answer, index) => total + (answer === key[index] ? 10 : 0), 0));
 }

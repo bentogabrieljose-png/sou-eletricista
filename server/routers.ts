@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { COURSE_LESSON_URL, EXAM_QUESTIONS, scoreExam } from "../shared/course";
-import { addNotebookPage, authorizeCertificate, authorizeCertificateReprint, buildCertificateFallbackReport, clearNotebookPage, createApplication, createCertificateReprint, createContent, createCourse, createMessage, deleteApplicationPermanently, deleteContent, deleteStudentDataPermanently, ensureCertificatePending, getApplicationByNumber, getCertificateByToken, getCertificateReprintStatus, getCurrentTrainingPrice, getNotebook, getStudentByCode, listApplications, listCertificateReprints, listCertificateRequests, listContent, listCourses, listMessages, listMaterialProgress, listNotebookVersions, listIssuedCertificates, markMaterialViewed, restoreNotebookVersion, saveCertificatePreflight, certificatePreflightInput, saveNotebookPage, startCourse, submitExam, updateApplicationStatus, uploadContentMedia, uploadNotebookImage } from "./db";
+import { scoreExam } from "../shared/course";
+import { addNotebookPage, authorizeCertificate, authorizeCertificateReprint, buildCertificateFallbackReport, clearNotebookPage, createApplication, createCertificateReprint, createContent, createCourse, createMessage, deleteApplicationPermanently, deleteContent, deleteStudentDataPermanently, ensureCertificatePending, getApplicationByNumber, getApplicationStats, getCertificateByToken, getCertificateReprintStatus, getCourseAssessment, getCurrentTrainingPrice, getNotebook, getStudentByCode, getStudentCourse, getStudentRanking, listApplicationsPage, listCertificateReprints, listCertificateRequests, listContent, listCourses, listMessages, listMaterialProgress, listNotebookVersions, listIssuedCertificates, markMaterialViewed, restoreNotebookVersion, saveCertificatePreflight, certificatePreflightInput, saveNotebookPage, startCourse, submitExam, updateApplicationStatus, uploadContentMedia, uploadNotebookImage } from "./db";
 import { invokeLLM } from "./_core/llm";
 import { COOKIE_NAME, COORDINATION_COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -89,16 +89,24 @@ export const appRouter = router({
     getByCode: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(async ({ input }) => {
       const student = await getStudentByCode(input.accessCode);
       if (!student) return undefined;
-      await ensureCertificatePending(student.application.id);
-      return (await getStudentByCode(input.accessCode)) || student;
+      if (student.progress?.examStatus === "passed" && student.progress.certificateStatus === "not_eligible" && (student.progress.latestScore ?? 0) > 50) {
+        await ensureCertificatePending(student.application.id);
+        return (await getStudentByCode(input.accessCode)) || student;
+      }
+      return student;
     }),
     login: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).mutation(async ({ input }) => {
       const student = await getStudentByCode(input.accessCode);
       if (!student) throw new TRPCError({ code: "UNAUTHORIZED", message: "Código inválido ou candidatura ainda não aprovada." });
-      await ensureCertificatePending(student.application.id);
-      return (await getStudentByCode(input.accessCode)) || student;
+      if (student.progress?.examStatus === "passed" && student.progress.certificateStatus === "not_eligible" && (student.progress.latestScore ?? 0) > 50) {
+        await ensureCertificatePending(student.application.id);
+        return (await getStudentByCode(input.accessCode)) || student;
+      }
+      return student;
     }),
     startCourse: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).mutation(({ input }) => startCourse(input.accessCode)),
+    course: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(({ input }) => getStudentCourse(input.accessCode)),
+    ranking: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(({ input }) => getStudentRanking(input.accessCode)),
     materialProgress: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(({ input }) => listMaterialProgress(input.accessCode)),
     markMaterialViewed: publicProcedure.input(z.object({ accessCode: z.string().min(5), materialKey: z.string().min(2).max(120), materialTitle: z.string().min(2).max(255), resourceUrl: z.string().url().optional() })).mutation(({ input }) => markMaterialViewed(input.accessCode, input)),
     notebook: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(({ input }) => getNotebook(input.accessCode)),
@@ -111,13 +119,19 @@ export const appRouter = router({
     exam: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(async ({ input }) => {
       const student = await getStudentByCode(input.accessCode);
       if (!student) throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
-      return { questions: EXAM_QUESTIONS, courseUrl: COURSE_LESSON_URL };
+      if (!student.progress?.accessUnlockAt || student.progress.accessUnlockAt.getTime() > Date.now()) throw new TRPCError({ code: "FORBIDDEN", message: "O teste abre 12 horas após a aprovação da inscrição." });
+      if (student.progress.examStatus === "passed") throw new TRPCError({ code: "FORBIDDEN", message: "A avaliação já foi concluída." });
+      const assessment = await getCourseAssessment(student.application.courseTitle);
+      return { questions: assessment.questions, courseUrl: assessment.lessonUrl };
     }),
     submitExam: publicProcedure.input(z.object({ accessCode: z.string().min(5), answers: z.array(z.number().int().min(0).max(3)).length(10) })).mutation(async ({ input }) => {
-      const score = scoreExam(input.answers);
       const student = await getStudentByCode(input.accessCode);
+      if (!student) throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
+      if (!student.progress?.accessUnlockAt || student.progress.accessUnlockAt.getTime() > Date.now()) throw new TRPCError({ code: "FORBIDDEN", message: "O teste abre 12 horas após a aprovação da inscrição." });
+      const assessment = await getCourseAssessment(student.application.courseTitle);
+      const score = scoreExam(input.answers, assessment.answerKey);
       const result = await submitExam(input.accessCode, score, input.answers);
-      if (!student || score < 50) return result;
+      if (!student || score <= 50) return result;
       let report = { conforming: false, score, checks: [] as string[], issues: ["A inspeção automática não foi concluída."] };
       try {
         const inspection = await invokeLLM({
@@ -133,7 +147,7 @@ export const appRouter = router({
       } catch (error) {
         console.warn("[Certificate] AI preflight unavailable:", error);
       }
-      const allFieldsPresent = Boolean(student.application.fullName && student.application.courseTitle && score >= 50);
+      const allFieldsPresent = Boolean(student.application.fullName && student.application.courseTitle && score > 50);
       report.conforming = Boolean(report.conforming && report.issues.length === 0 && allFieldsPresent);
       if (!report.conforming) {
         const fallback = buildCertificateFallbackReport(student, score);
@@ -167,7 +181,13 @@ export const appRouter = router({
   }),
   coordination: router({
     monitoring: adminProcedure.query(() => getRequestMetrics()),
-    applications: adminProcedure.query(() => listApplications()),
+    applicationStats: adminProcedure.query(() => getApplicationStats()),
+    applications: adminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(50), courseTitle: z.string().optional(), status: z.enum(["pending", "approved", "rejected"]).optional(), from: z.string().date().optional(), to: z.string().date().optional(), search: z.string().max(320).optional(), proofStatus: z.enum(["consistent", "review", "inconsistent"]).optional() })).query(({ input }) => {
+      if (input.from && input.to && input.from > input.to) throw new TRPCError({ code: "BAD_REQUEST", message: "A data inicial não pode ultrapassar a data final." });
+      const to = input.to ? new Date(`${input.to}T00:00:00.000Z`) : undefined;
+      if (to) to.setUTCDate(to.getUTCDate() + 1);
+      return listApplicationsPage({ ...input, from: input.from ? new Date(`${input.from}T00:00:00.000Z`) : undefined, to });
+    }),
     approveApplication: adminProcedure.input(z.object({ applicationNumber: z.string(), status: z.enum(["approved", "rejected"]), rejectionReason: z.string().optional() })).mutation(({ input }) => updateApplicationStatus(input.applicationNumber, input.status, input.rejectionReason)),
     deleteApplicationPermanently: adminProcedure.input(z.object({ applicationNumber: z.string() })).mutation(({ input }) => deleteApplicationPermanently(input.applicationNumber)),
     certificateRequests: adminProcedure.query(() => listCertificateRequests()),
@@ -182,7 +202,7 @@ export const appRouter = router({
     deleteContent: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(({ input }) => deleteContent(input.id)),
     uploadContentMedia: adminProcedure.input(z.object({ fileName: z.string().min(1).max(255), contentType: z.string().min(3).max(120), data: z.string().min(20).max(120000000) })).mutation(({ input }) => uploadContentMedia(input)),
     createContent: adminProcedure.input(z.object({ kind: z.enum(["welcome_video", "course_video", "update"]), title: z.string().min(2), body: z.string().optional(), mediaUrl: z.string().min(1).optional(), mediaPosterUrl: z.string().url().optional(), mediaDurationSeconds: z.number().int().nonnegative().optional(), mediaProcessingStatus: z.enum(["not_applicable", "processed", "original"]).optional() })).mutation(({ input }) => createContent(input)),
-    createCourse: adminProcedure.input(z.object({ title: z.string().min(3), slug: z.string().min(3), description: z.string().min(10), hours: z.number().int().positive(), lessonUrl: z.string().url() })).mutation(({ input }) => createCourse(input)),
+    createCourse: adminProcedure.input(z.object({ title: z.string().min(3), slug: z.string().min(3), description: z.string().min(10), hours: z.number().int().positive(), lessonUrl: z.string().url(), examQuestions: z.array(z.object({ question: z.string().min(10), options: z.tuple([z.string().min(1), z.string().min(1), z.string().min(1), z.string().min(1)]), correctIndex: z.number().int().min(0).max(3) })).length(10) })).mutation(({ input }) => createCourse(input)),
   }),
 });
 

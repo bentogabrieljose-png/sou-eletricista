@@ -16,12 +16,14 @@ import {
   MessageCircle,
   Send,
   Sparkles,
+  Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { LoadingState } from "@/components/PageLoader";
 import { MaterialProgressPanel } from "@/components/MaterialProgressPanel";
 import { NotebookPanel } from "@/components/NotebookPanel";
+import { StudentRankingPanel } from "@/components/StudentRankingPanel";
 
 const LOGO = "/manus-storage/sou-eletricista-logo_a1bfc7b7.png";
 
@@ -35,7 +37,7 @@ export default function Aluno() {
   const [showExam, setShowExam] = useState(false);
   const [answers, setAnswers] = useState<number[]>(Array(10).fill(-1));
   const [activeTab, setActiveTab] = useState<
-    "overview" | "messages" | "assistant" | "notebook" | "certificates"
+    "overview" | "messages" | "assistant" | "notebook" | "certificates" | "ranking"
   >("overview");
   const [chat, setChat] = useState<
     { role: "user" | "assistant"; content: string }[]
@@ -67,6 +69,8 @@ export default function Aluno() {
     onError: error => toast.error(error.message),
   });
   const student = studentQuery.data || studentSession;
+  const courseQuery = trpc.student.course.useQuery({ accessCode: accessCode || "invalid" }, { enabled: Boolean(accessCode) && Boolean(student) });
+  const courseUrl = courseQuery.data?.lessonUrl;
   const examQuery = trpc.student.exam.useQuery(
     { accessCode: accessCode || "invalid" },
     { enabled: showExam && Boolean(accessCode) }
@@ -79,7 +83,7 @@ export default function Aluno() {
     onSuccess: data => {
       studentQuery.refetch();
       toast.success(
-        "Início da formação registado. O teste ficará disponível 12 horas depois."
+        "Início da formação registado. O teste abre 12 horas após a aprovação da inscrição."
       );
     },
   });
@@ -151,16 +155,10 @@ export default function Aluno() {
     studentLogin.mutate({ accessCode: normalized });
   };
   const doStart = () => {
-    if (student?.application.accessCode) {
-      window.open(
-        studentQuery.data?.application
-          ? "https://share.minicoursegenerator.com/eletricidade-basica-para-instalacoes-residenciais-em-baixa-tensao-dc8d9d"
-          : "#",
-        "_blank",
-        "noopener,noreferrer"
-      );
+    if (student?.application.accessCode && courseUrl) {
+      window.open(courseUrl, "_blank", "noopener,noreferrer");
       startCourse.mutate({ accessCode: student.application.accessCode });
-    }
+    } else toast.error("O material deste curso está temporariamente indisponível. Contacte a Coordenação.");
   };
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -352,7 +350,9 @@ export default function Aluno() {
                 ? "Disponível"
                 : student.progress?.certificateStatus === "pending"
                   ? "Em análise"
-                  : "Pendente"}
+                  : student.progress?.certificateStatus === "rejected"
+                    ? "Não autorizado"
+                    : "Ainda não solicitado"}
             </p>
           </div>
         </div>
@@ -381,6 +381,7 @@ export default function Aluno() {
           >
             <FileBadge2 className="h-4 w-4" /> Meus certificados
           </button>
+          <button onClick={() => setActiveTab("ranking")} className={`tab-button ${activeTab === "ranking" ? "tab-active" : ""}`}><Trophy className="h-4 w-4" /> Ranking da turma</button>
           <button
             onClick={() => setActiveTab("assistant")}
             className={`tab-button ${activeTab === "assistant" ? "tab-active" : ""}`}
@@ -396,11 +397,11 @@ export default function Aluno() {
                   <div>
                     <p className="eyebrow">Sala de aula</p>
                     <h2 className="mt-3 font-display text-2xl font-black">
-                      Eletricidade Básica
+                      {student.application.courseTitle}
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
                       Aceda ao material oficial e avance para a avaliação quando
-                      concluir o período mínimo de estudo.
+                      se sentir preparado, após 12 horas da aprovação da inscrição.
                     </p>
                   </div>
                   <BookOpen className="h-10 w-10 text-[#e0a900]" />
@@ -411,9 +412,9 @@ export default function Aluno() {
                   className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#0b45ad] px-6 py-3.5 font-extrabold text-white disabled:opacity-60"
                 >
                   <ExternalLink className="h-4 w-4" />{" "}
-                  "Começar agora"
+                  Começar agora
                 </button>
-                {student.progress?.startedAt && (
+                {student.progress?.accessUnlockAt && (
                   <div className="mt-7 rounded-2xl bg-[#eef5ff] p-5 dark:bg-[#0e2a56]">
                     <div className="flex items-start gap-3">
                       {isUnlocked ? (
@@ -429,7 +430,7 @@ export default function Aluno() {
                         </p>
                         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                           {isUnlocked
-                            ? "Clique em Curso concluído para responder às 10 questões."
+                            ? "Quando se sentir preparado, clique em Já Sou Eletricista para responder às 10 questões."
                             : `Tempo restante aproximado: ${remainingText}`}
                         </p>
                       </div>
@@ -440,7 +441,7 @@ export default function Aluno() {
                           onClick={() => setShowExam(true)}
                           className="mt-5 rounded-full bg-emerald-600 px-5 py-3 text-sm font-extrabold text-white"
                         >
-                          Curso concluído · Fazer teste
+                          Já Sou Eletricista · Fazer teste
                         </button>
                       )}
                     {student.progress?.examStatus === "passed" && (
@@ -465,7 +466,7 @@ export default function Aluno() {
                     ? "O seu certificado está pronto. Abra a versão imprimível e guarde-o em PDF."
                     : student.progress?.certificateStatus === "pending"
                       ? "A inspeção automática confirmou o modelo e os dados. O certificado aguarda agora apenas a autorização do Diretor."
-                      : "Responda ao teste com atenção. Precisa de pelo menos 50% para solicitar o certificado."}
+                      : "Responda ao teste com atenção. Precisa de nota superior a 50% para solicitar o certificado."}
                 </p>
                 {student.progress?.certificateStatus === "approved" &&
                   student.progress.qrToken && (
@@ -486,6 +487,7 @@ export default function Aluno() {
                 student.application.applicationNumber
               }
               courseStarted={Boolean(student.progress?.startedAt)}
+              courseUrl={courseUrl}
             />
           </>
         )}
@@ -498,6 +500,7 @@ export default function Aluno() {
             studentName={student.application.fullName}
           />
         )}
+        {activeTab === "ranking" && <StudentRankingPanel accessCode={student.application.accessCode || student.application.applicationNumber} />}
         {activeTab === "certificates" && (
           <section className="mt-8 rounded-[2rem] border border-blue-100 bg-white p-7 shadow-sm dark:border-white/10 dark:bg-white/5">
             <div className="flex flex-wrap items-start justify-between gap-5">
@@ -626,6 +629,8 @@ export default function Aluno() {
             </form>
           </section>
         )}
+        {showExam && examQuery.isLoading && <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#07111f]/80 p-4"><div className="rounded-2xl bg-white p-6 text-[#12213a]" role="status">A preparar o teste do seu curso…</div></div>}
+        {showExam && examQuery.isError && <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#07111f]/80 p-4"><div className="max-w-md rounded-2xl bg-white p-6 text-[#12213a]" role="alert"><h2 className="text-lg font-bold">Teste indisponível</h2><p className="mt-2 text-sm">{examQuery.error.message}</p><button onClick={() => setShowExam(false)} className="mt-4 rounded-full bg-[#0b45ad] px-5 py-2 text-white">Fechar</button></div></div>}
         {showExam && examQuery.data && (
           <div className="fixed inset-0 z-50 overflow-y-auto bg-[#07111f]/80 p-4 backdrop-blur">
             <div className="mx-auto my-8 max-w-3xl rounded-[2rem] bg-white p-7 text-[#12213a] shadow-2xl dark:bg-[#102541] dark:text-white sm:p-10">

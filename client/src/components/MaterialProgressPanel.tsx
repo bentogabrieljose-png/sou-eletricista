@@ -10,15 +10,14 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { PRACTICAL_LESSONS_URL } from "@shared/course";
 
-const COURSE_URL =
-  "https://share.minicoursegenerator.com/eletricidade-basica-para-instalacoes-residenciais-em-baixa-tensao-dc8d9d";
-
 export function MaterialProgressPanel({
   accessCode,
   courseStarted,
+  courseUrl,
 }: {
   accessCode: string;
   courseStarted: boolean;
+  courseUrl?: string;
 }) {
   const progressQuery = trpc.student.materialProgress.useQuery(
     { accessCode },
@@ -78,7 +77,7 @@ export function MaterialProgressPanel({
         <button
           type="button"
           onClick={() =>
-            openMaterial("course-core", "Formação principal", COURSE_URL)
+            courseUrl ? openMaterial("course-core", "Formação principal", courseUrl) : toast.error("O material deste curso não está disponível. Contacte a Coordenação.")
           }
           className="group flex items-start gap-4 rounded-2xl border border-blue-100 p-5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-[#0b45ad] hover:shadow-md dark:border-white/10"
         >

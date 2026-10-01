@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, isNull, lt, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, isNotNull, isNull, like, lt, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { nanoid } from "nanoid";
 import { execFile } from "node:child_process";
@@ -6,7 +6,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { promisify } from "node:util";
 import { InsertUser, applications, certificateReprintRequests, contentItems, courses, examAttempts, materialProgress, messages, notebookPages, notebookVersions, notebooks, studentProgress, users } from "../drizzle/schema";
-import { COURSE_LESSON_URL } from "../shared/course";
+import { COURSE_LESSON_URL, EXAM_QUESTIONS, ANSWER_KEY, examUnlockAt, type CourseExamQuestion } from "../shared/course";
 import { CERTIFICATE_CENTER_NAME, CERTIFICATE_DIRECTOR_NAME, CERTIFICATE_DURATION_LABEL, CERTIFICATE_TEMPLATE_VERSION } from "../shared/certificate";
 import { getTrainingPrice } from "../shared/pricing";
 import { ENV } from "./_core/env";
@@ -16,8 +16,9 @@ let _db: ReturnType<typeof drizzle> | null = null;
 const PUBLIC_CACHE_MS = 30_000;
 let defaultCoursePromise: Promise<void> | null = null;
 type CourseRow = typeof courses.$inferSelect;
+type PublicCourseRow = Omit<CourseRow, "examQuestions">;
 type ContentRow = typeof contentItems.$inferSelect;
-let coursesCache: TtlCacheEntry<CourseRow[]> | null = null;
+let coursesCache: TtlCacheEntry<PublicCourseRow[]> | null = null;
 let publicContentCache: TtlCacheEntry<ContentRow[]> | null = null;
 const execFileAsync = promisify(execFile);
 
@@ -82,21 +83,28 @@ async function ensureDefaultCourseOnce() {
   }
 }
 
-export async function listCourses(): Promise<CourseRow[]> {
+export async function listCourses(): Promise<PublicCourseRow[]> {
   const cached = readTtlCache(coursesCache);
   if (cached) return cached;
   const db = await getDb();
   if (!db) return [];
   await ensureDefaultCourse();
-  const value = await db.select().from(courses).where(eq(courses.active, 1)).orderBy(desc(courses.createdAt));
+  const value = await db.select({ id: courses.id, title: courses.title, slug: courses.slug, description: courses.description, hours: courses.hours, lessonUrl: courses.lessonUrl, coverUrl: courses.coverUrl, active: courses.active, createdAt: courses.createdAt, updatedAt: courses.updatedAt }).from(courses).where(eq(courses.active, 1)).orderBy(desc(courses.createdAt));
   coursesCache = writeTtlCache(value, PUBLIC_CACHE_MS);
   return value;
 }
 
-export async function createCourse(input: { title: string; slug: string; description: string; hours: number; lessonUrl: string }) {
+export async function createCourse(input: { title: string; slug: string; description: string; hours: number; lessonUrl: string; examQuestions: CourseExamQuestion[] }) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  await db.insert(courses).values({ ...input, active: 1 });
+  await db.transaction(async tx => {
+    const active = await tx.select({ id: courses.id }).from(courses).where(eq(courses.active, 1)).limit(3).for("update");
+    if (active.length >= 3) throw new Error("Máximo de três cursos ativos em simultâneo.");
+    const existingTitle = await tx.select({ id: courses.id }).from(courses).where(eq(courses.title, input.title)).limit(1);
+    if (existingTitle.length) throw new Error("Já existe um curso com este nome.");
+    const { examQuestions, ...details } = input;
+    await tx.insert(courses).values({ ...details, examQuestions: JSON.stringify(examQuestions), active: 1 });
+  });
   coursesCache = null;
   return (await db.select().from(courses).where(eq(courses.slug, input.slug)).limit(1))[0];
 }
@@ -109,6 +117,8 @@ export async function createApplication(input: {
 }) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
+  const course = (await db.select({ id: courses.id }).from(courses).where(and(eq(courses.title, input.courseTitle), eq(courses.active, 1))).limit(1))[0];
+  if (!course) throw new Error("Selecione um curso ativo válido antes de enviar a inscrição.");
   const applicationNumber = `SE-${new Date().getFullYear()}-${nanoid(6).toUpperCase()}`;
   let proofUrl: string | undefined;
   let proofKey: string | undefined;
@@ -136,6 +146,82 @@ export async function listApplications() {
   return db.select().from(applications).orderBy(desc(applications.createdAt));
 }
 
+export type ApplicationFilters = { page: number; pageSize: number; courseTitle?: string; status?: "pending" | "approved" | "rejected"; from?: Date; to?: Date; search?: string; proofStatus?: "consistent" | "review" | "inconsistent" };
+export async function listApplicationsPage(filters: ApplicationFilters) {
+  const db = await getDb();
+  if (!db) return { items: [], total: 0, page: filters.page, pageSize: filters.pageSize };
+  const conditions = [
+    filters.courseTitle ? eq(applications.courseTitle, filters.courseTitle) : undefined,
+    filters.status ? eq(applications.status, filters.status) : undefined,
+    filters.from ? gte(applications.createdAt, filters.from) : undefined,
+    filters.to ? lt(applications.createdAt, filters.to) : undefined,
+    filters.proofStatus === "review" ? or(eq(applications.proofInspectionStatus, "review"), eq(applications.proofInspectionStatus, "not_checked")) : filters.proofStatus ? eq(applications.proofInspectionStatus, filters.proofStatus) : undefined,
+    filters.search ? or(like(applications.fullName, `%${filters.search.replace(/[\\%_]/g, "\\$&")}%`), like(applications.email, `%${filters.search.replace(/[\\%_]/g, "\\$&")}%`), like(applications.applicationNumber, `%${filters.search.replace(/[\\%_]/g, "\\$&")}%`)) : undefined,
+  ].filter((value): value is NonNullable<typeof value> => Boolean(value));
+  const where = conditions.length ? and(...conditions) : undefined;
+  const [items, totals] = await Promise.all([
+    db.select().from(applications).where(where).orderBy(desc(applications.createdAt)).limit(filters.pageSize).offset((filters.page - 1) * filters.pageSize),
+    db.select({ value: count() }).from(applications).where(where),
+  ]);
+  return { items, total: totals[0]?.value ?? 0, page: filters.page, pageSize: filters.pageSize };
+}
+
+export async function getApplicationStats() {
+  const db = await getDb();
+  if (!db) return { pending: 0, studying: 0 };
+  const [pending, studying] = await Promise.all([
+    db.select({ value: count() }).from(applications).where(eq(applications.status, "pending")),
+    db.select({ value: count() }).from(applications).where(eq(applications.status, "approved")),
+  ]);
+  return { pending: pending[0]?.value ?? 0, studying: studying[0]?.value ?? 0 };
+}
+
+export async function getCourseAssessment(courseTitle: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Base de dados indisponível.");
+  const course = (await db.select().from(courses).where(eq(courses.title, courseTitle)).limit(1))[0];
+  if (!course) throw new Error("O curso deste aluno não está disponível.");
+  if (!course.examQuestions) {
+    if (course.slug !== "eletricidade-basica") throw new Error("A Coordenação ainda não configurou o teste deste curso.");
+    return { questions: EXAM_QUESTIONS, answerKey: ANSWER_KEY, lessonUrl: course.lessonUrl };
+  }
+  const questions = JSON.parse(course.examQuestions) as CourseExamQuestion[];
+  if (questions.length !== 10 || questions.some(item => !Array.isArray(item.options) || item.options.length !== 4 || !Number.isInteger(item.correctIndex) || item.correctIndex < 0 || item.correctIndex > 3)) throw new Error("O teste do curso está incompleto. Contacte a Coordenação.");
+  return { questions: questions.map((item, index) => ({ id: index + 1, question: item.question, options: item.options })), answerKey: questions.map(item => item.correctIndex), lessonUrl: course.lessonUrl };
+}
+
+export async function getStudentCourse(accessCode: string) {
+  const student = await getStudentByCode(accessCode);
+  if (!student) return undefined;
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select({ title: courses.title, lessonUrl: courses.lessonUrl, hours: courses.hours }).from(courses).where(eq(courses.title, student.application.courseTitle)).limit(1))[0];
+}
+
+export function cohortWindow(approvedAt: Date) {
+  const year = approvedAt.getUTCFullYear();
+  const month = approvedAt.getUTCMonth();
+  return { start: new Date(Date.UTC(year, month, 1)), end: new Date(Date.UTC(year, month + 1, 1)), label: `${String(month + 1).padStart(2, "0")}/${year}` };
+}
+
+export function rankingDisplayName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/);
+  return parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1][0]}.` : parts[0];
+}
+
+export async function getStudentRanking(accessCode: string) {
+  const student = await getStudentByCode(accessCode);
+  if (!student?.application.approvedAt) return undefined;
+  const db = await getDb();
+  if (!db) return undefined;
+  const window = cohortWindow(student.application.approvedAt);
+  const rows = await db.select({ id: applications.id, name: applications.fullName, score: studentProgress.latestScore, completedAt: studentProgress.completedAt })
+    .from(applications).innerJoin(studentProgress, eq(studentProgress.applicationId, applications.id))
+    .where(and(eq(applications.courseTitle, student.application.courseTitle), eq(applications.status, "approved"), gte(applications.approvedAt, window.start), lt(applications.approvedAt, window.end), eq(studentProgress.examStatus, "passed"), gte(studentProgress.accessExpiresAt, new Date())))
+    .orderBy(desc(studentProgress.latestScore), asc(studentProgress.completedAt)).limit(10);
+  return { courseTitle: student.application.courseTitle, cohort: window.label, yourScore: student.progress?.latestScore ?? null, students: rows.map((row, index) => ({ position: index + 1, displayName: row.id === student.application.id ? "Você" : rankingDisplayName(row.name), score: row.score, isMe: row.id === student.application.id })) };
+}
+
 export async function updateApplicationStatus(applicationNumber: string, status: "approved" | "rejected", rejectionReason?: string) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
@@ -154,16 +240,19 @@ export async function updateApplicationStatus(applicationNumber: string, status:
   }
   const applicationBeforeApproval = await getApplicationByNumber(applicationNumber);
   if (!applicationBeforeApproval) return undefined;
+  if (applicationBeforeApproval.status === "approved") return applicationBeforeApproval;
   const accessCode = status === "approved" ? (applicationBeforeApproval.accessCode || applicationBeforeApproval.applicationNumber) : undefined;
-  await db.update(applications).set({ status, accessCode, approvedAt: status === "approved" ? new Date() : null, rejectionReason: rejectionReason || null }).where(eq(applications.applicationNumber, applicationNumber));
+  const approvedAt = new Date();
+  await db.update(applications).set({ status, accessCode, approvedAt, rejectionReason: rejectionReason || null }).where(eq(applications.applicationNumber, applicationNumber));
   if (status === "approved") {
     const application = await getApplicationByNumber(applicationNumber);
     if (application) {
       const existingProgress = (await db.select({ id: studentProgress.id }).from(studentProgress).where(eq(studentProgress.applicationId, application.id)).limit(1))[0];
       const snapshot = { studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle };
-      const accessExpiresAt = new Date((application.approvedAt ?? new Date()).getTime() + 10 * 24 * 60 * 60 * 1000);
-      if (existingProgress) await db.update(studentProgress).set({ ...snapshot, accessExpiresAt }).where(eq(studentProgress.id, existingProgress.id));
-      else await db.insert(studentProgress).values({ applicationId: application.id, ...snapshot, accessExpiresAt });
+      const accessExpiresAt = new Date(approvedAt.getTime() + 10 * 24 * 60 * 60 * 1000);
+      const accessUnlockAt = examUnlockAt(approvedAt);
+      if (existingProgress) await db.update(studentProgress).set({ ...snapshot, accessExpiresAt, accessUnlockAt }).where(eq(studentProgress.id, existingProgress.id));
+      else await db.insert(studentProgress).values({ applicationId: application.id, ...snapshot, accessExpiresAt, accessUnlockAt });
     }
   }
   return getApplicationByNumber(applicationNumber);
@@ -254,6 +343,11 @@ export async function getStudentByCode(accessCode: string) {
     const accessExpiresAt = new Date((application.approvedAt ?? new Date()).getTime() + 10 * 24 * 60 * 60 * 1000);
     await db.update(studentProgress).set({ accessExpiresAt }).where(eq(studentProgress.id, progress.id));
     progress = { ...progress, accessExpiresAt };
+  }
+  if (progress && application.approvedAt && progress.accessUnlockAt?.getTime() !== examUnlockAt(application.approvedAt).getTime()) {
+    const accessUnlockAt = examUnlockAt(application.approvedAt);
+    await db.update(studentProgress).set({ accessUnlockAt }).where(eq(studentProgress.id, progress.id));
+    progress = { ...progress, accessUnlockAt };
   }
   if (progress?.accessExpiresAt && progress.accessExpiresAt.getTime() <= Date.now()) {
     await expireStudentAccess(application.id, progress.id);
@@ -427,8 +521,8 @@ export async function startCourse(accessCode: string) {
   if (!student) return undefined;
   if (!student.progress?.startedAt) {
     const startedAt = new Date();
-    const accessUnlockAt = new Date(startedAt.getTime() + 12 * 60 * 60 * 1000);
-    await db.update(studentProgress).set({ startedAt, accessUnlockAt, examStatus: "not_started" }).where(eq(studentProgress.applicationId, student.application.id));
+    const accessUnlockAt = student.progress?.accessUnlockAt ?? examUnlockAt(student.application.approvedAt ?? startedAt);
+    await db.update(studentProgress).set({ startedAt, accessUnlockAt }).where(eq(studentProgress.applicationId, student.application.id));
   }
   return getStudentByCode(accessCode);
 }
@@ -438,10 +532,14 @@ export async function submitExam(accessCode: string, score: number, answers: num
   if (!db) throw new Error("Database unavailable");
   const student = await getStudentByCode(accessCode);
   if (!student) return undefined;
-  const passed = score >= 50;
-  await db.insert(examAttempts).values({ applicationId: student.application.id, score, passed: passed ? 1 : 0, answers: JSON.stringify(answers) });
-  const currentAttempts = (student.progress?.attempts ?? 0) + 1;
-  await db.update(studentProgress).set({ latestScore: score, examStatus: passed ? "passed" : "retry", certificateStatus: "not_eligible", completedAt: passed ? new Date() : null, attempts: currentAttempts }).where(eq(studentProgress.applicationId, student.application.id));
+  await db.transaction(async tx => {
+    const progress = (await tx.select().from(studentProgress).where(eq(studentProgress.applicationId, student.application.id)).limit(1).for("update"))[0];
+    if (!progress?.accessUnlockAt || progress.accessUnlockAt.getTime() > Date.now()) throw new Error("O teste só abre 12 horas após a aprovação da inscrição.");
+    if (progress.examStatus === "passed") throw new Error("A avaliação já foi concluída.");
+    const passed = score > 50;
+    await tx.insert(examAttempts).values({ applicationId: student.application.id, score, passed: passed ? 1 : 0, answers: JSON.stringify(answers) });
+    await tx.update(studentProgress).set({ latestScore: score, examStatus: passed ? "passed" : "retry", certificateStatus: "not_eligible", completedAt: passed ? new Date() : null, attempts: progress.attempts + 1 }).where(eq(studentProgress.applicationId, student.application.id));
+  });
   return getStudentByCode(accessCode);
 }
 
@@ -474,7 +572,7 @@ export function buildCertificateFallbackReport(student: { application: { fullNam
   const issues = [
     !student.application.fullName ? "Nome completo em falta." : null,
     !student.application.courseTitle ? "Curso em falta." : null,
-    score < 50 ? "A nota mínima para certificado é 50%." : null,
+    score <= 50 ? "A nota para certificado deve ser superior a 50%." : null,
   ].filter((issue): issue is string => Boolean(issue));
   return { conforming: issues.length === 0, score, checks, issues };
 }
@@ -483,7 +581,7 @@ export async function ensureCertificatePending(applicationId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   const row = (await db.select({ progress: studentProgress, application: applications }).from(studentProgress).innerJoin(applications, eq(studentProgress.applicationId, applications.id)).where(eq(studentProgress.applicationId, applicationId)).limit(1))[0];
-  if (!row || row.application.status !== "approved" || (row.progress.latestScore ?? 0) < 50 || row.progress.certificateStatus === "approved") return row?.progress;
+  if (!row || row.application.status !== "approved" || (row.progress.latestScore ?? 0) <= 50 || row.progress.certificateStatus === "approved") return row?.progress;
   if (row.progress.certificateStatus !== "pending") {
     const report = buildCertificateFallbackReport({ application: row.application }, row.progress.latestScore ?? 0);
     await db.update(studentProgress).set({ certificateStatus: report.conforming ? "pending" : "not_eligible", certificateAiReport: JSON.stringify({ ...report, source: "automatic-fallback", template: CERTIFICATE_TEMPLATE_VERSION, checkedAt: new Date().toISOString() }), certificateAiCheckedAt: new Date() }).where(eq(studentProgress.applicationId, applicationId));
@@ -503,7 +601,8 @@ export async function authorizeCertificate(applicationId: number, approved: bool
   if (!db) throw new Error("Database unavailable");
   const certificateNumber = `SE-CERT-${new Date().getFullYear()}-${String(applicationId).padStart(5, "0")}`;
   const qrToken = nanoid(20);
-  await db.update(studentProgress).set({ certificateStatus: approved ? "approved" : "rejected", certificateNumber: approved ? certificateNumber : null, qrToken: approved ? qrToken : null, certificateUrl: approved ? `/student/certificate/${qrToken}` : null }).where(eq(studentProgress.applicationId, applicationId));
+  const result = await db.update(studentProgress).set({ certificateStatus: approved ? "approved" : "rejected", certificateNumber: approved ? certificateNumber : null, qrToken: approved ? qrToken : null, certificateUrl: approved ? `/student/certificate/${qrToken}` : null }).where(and(eq(studentProgress.applicationId, applicationId), eq(studentProgress.certificateStatus, "pending"), eq(studentProgress.examStatus, "passed"), gte(studentProgress.latestScore, 60)));
+  if (!result[0].affectedRows) throw new Error("Só é possível decidir certificados pendentes de alunos com nota superior a 50%.");
   return certificateNumber;
 }
 

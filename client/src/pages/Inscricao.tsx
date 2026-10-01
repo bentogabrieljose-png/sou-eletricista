@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link } from "wouter";
 import { ArrowLeft, ArrowRight, CheckCircle2, Copy, FileCheck2, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ export default function Inscricao() {
   const [submitted, setSubmitted] = useState<any>(null);
   const [form, setForm] = useState({ fullName: "", email: "", nif: "", phone: "", courseTitle: "Eletricidade Básica para Instalações Residenciais em Baixa Tensão", paymentMethod: "PayPay AO", proofData: "", proofName: "", proofType: "" });
   const { data: courses } = trpc.public.courses.useQuery();
+  useEffect(() => { if (courses?.length && !courses.some(course => course.title === form.courseTitle)) setForm(current => ({ ...current, courseTitle: courses[0].title })); }, [courses, form.courseTitle]);
   const { data: pricing } = trpc.public.pricing.useQuery();
   const mutation = trpc.public.createApplication.useMutation({ onSuccess: data => { setSubmitted(data); toast.success("Candidatura enviada para análise."); }, onError: error => toast.error(error.message || "Não foi possível enviar a candidatura.") });
 

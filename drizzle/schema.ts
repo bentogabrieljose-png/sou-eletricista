@@ -19,6 +19,7 @@ export const courses = mysqlTable("courses", {
   description: text("description").notNull(),
   hours: int("hours").default(12).notNull(),
   lessonUrl: varchar("lessonUrl", { length: 500 }).notNull(),
+  examQuestions: text("examQuestions"),
   coverUrl: varchar("coverUrl", { length: 500 }),
   active: int("active").default(1).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -46,7 +47,11 @@ export const applications = mysqlTable("applications", {
   rejectionReason: text("rejectionReason"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, table => ({ statusCreatedAtIdx: index("applications_status_created_at_idx").on(table.status, table.createdAt) }));
+}, table => ({
+  statusCreatedAtIdx: index("applications_status_created_at_idx").on(table.status, table.createdAt),
+  courseStatusCreatedIdx: index("applications_course_status_created_idx").on(table.courseTitle, table.status, table.createdAt),
+  courseApprovedIdx: index("applications_course_approved_idx").on(table.courseTitle, table.approvedAt),
+}));
 
 export const studentProgress = mysqlTable("student_progress", {
   id: int("id").autoincrement().primaryKey(),
@@ -70,7 +75,10 @@ export const studentProgress = mysqlTable("student_progress", {
   attempts: int("attempts").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, table => ({ certificateUpdatedAtIdx: index("student_progress_certificate_updated_at_idx").on(table.certificateStatus, table.updatedAt) }));
+}, table => ({
+  certificateUpdatedAtIdx: index("student_progress_certificate_updated_at_idx").on(table.certificateStatus, table.updatedAt),
+  scoreRankIdx: index("student_progress_exam_score_idx").on(table.examStatus, table.latestScore),
+}));
 
 export const certificateReprintRequests = mysqlTable("certificate_reprint_requests", {
   id: int("id").autoincrement().primaryKey(),
