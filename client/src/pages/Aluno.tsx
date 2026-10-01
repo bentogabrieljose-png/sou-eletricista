@@ -1,6 +1,6 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link } from "wouter";
-import { PRACTICAL_LESSONS_URL } from "@shared/course";
+import { PRACTICAL_LESSONS_URL, formatExamCountdown } from "@shared/course";
 import {
   Bot,
   BookOpen,
@@ -24,6 +24,7 @@ import { LoadingState } from "@/components/PageLoader";
 import { MaterialProgressPanel } from "@/components/MaterialProgressPanel";
 import { NotebookPanel } from "@/components/NotebookPanel";
 import { StudentRankingPanel } from "@/components/StudentRankingPanel";
+import { StudentCertificatePanel } from "@/components/StudentCertificatePanel";
 
 const LOGO = "/manus-storage/sou-eletricista-logo_a1bfc7b7.png";
 
@@ -35,6 +36,7 @@ export default function Aluno() {
   const [lookupTimedOut, setLookupTimedOut] = useState(false);
   const [studentSession, setStudentSession] = useState<any>(null);
   const [showExam, setShowExam] = useState(false);
+  const [clockNow, setClockNow] = useState(() => Date.now());
   const [answers, setAnswers] = useState<number[]>(Array(10).fill(-1));
   const [activeTab, setActiveTab] = useState<
     "overview" | "messages" | "assistant" | "notebook" | "certificates" | "ranking"
@@ -131,19 +133,16 @@ export default function Aluno() {
   const unlockAt = student?.progress?.accessUnlockAt
     ? new Date(student.progress.accessUnlockAt)
     : null;
-  const isUnlocked = Boolean(unlockAt && unlockAt.getTime() <= Date.now());
-  const remaining = unlockAt ? Math.max(0, unlockAt.getTime() - Date.now()) : 0;
-  const remainingText = useMemo(() => {
-    const hours = Math.floor(remaining / 3600000);
-    const minutes = Math.floor((remaining % 3600000) / 60000);
-    return `${hours}h ${minutes.toString().padStart(2, "0")}min`;
-  }, [remaining]);
+  const remaining = unlockAt ? Math.max(0, unlockAt.getTime() - clockNow) : 0;
+  const isUnlocked = Boolean(unlockAt && remaining === 0);
+  const remainingText = formatExamCountdown(remaining);
   const accessExpiresAt = student?.progress?.accessExpiresAt
     ? new Date(student.progress.accessExpiresAt)
     : null;
   useEffect(() => {
     if (!unlockAt || isUnlocked) return;
-    const timer = window.setInterval(() => studentQuery.refetch(), 60000);
+    setClockNow(Date.now());
+    const timer = window.setInterval(() => setClockNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, [unlockAt?.getTime(), isUnlocked]);
 
@@ -431,18 +430,22 @@ export default function Aluno() {
                         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                           {isUnlocked
                             ? "Quando se sentir preparado, clique em Já Sou Eletricista para responder às 10 questões."
-                            : `Tempo restante aproximado: ${remainingText}`}
+                            : `Tempo restante até ao teste: ${remainingText}`}
                         </p>
                       </div>
                     </div>
-                    {isUnlocked &&
-                      student.progress?.examStatus !== "passed" && (
+                    {student.progress?.examStatus !== "passed" && (
+                        <>
+                        {!isUnlocked && <div role="progressbar" aria-label="Tempo decorrido até desbloquear o teste" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.max(0, Math.round((1 - remaining / (12 * 60 * 60 * 1000)) * 100)))} className="mt-4 h-2 overflow-hidden rounded-full bg-blue-200 dark:bg-white/15"><div className="h-full rounded-full bg-[#e0a900] transition-[width] duration-1000" style={{ width: `${Math.min(100, Math.max(0, (1 - remaining / (12 * 60 * 60 * 1000)) * 100))}%` }} /></div>}
                         <button
-                          onClick={() => setShowExam(true)}
-                          className="mt-5 rounded-full bg-emerald-600 px-5 py-3 text-sm font-extrabold text-white"
+                          onClick={() => { if (isUnlocked) setShowExam(true); }}
+                          disabled={!isUnlocked}
+                          className="mt-5 inline-flex flex-wrap items-center gap-2 rounded-full bg-emerald-600 px-5 py-3 text-sm font-extrabold text-white disabled:cursor-not-allowed disabled:bg-[#0b45ad] disabled:opacity-90"
                         >
-                          Já Sou Eletricista · Fazer teste
+                          {isUnlocked ? <CheckCircle2 className="h-4 w-4" /> : <Clock3 className="h-4 w-4" />}
+                          {isUnlocked ? "Já Sou Eletricista · Fazer teste" : `Já Sou Eletricista · ${remainingText}`}
                         </button>
+                        </>
                       )}
                     {student.progress?.examStatus === "passed" && (
                       <p className="mt-5 inline-flex items-center gap-2 font-bold text-emerald-700 dark:text-emerald-300">
@@ -501,22 +504,7 @@ export default function Aluno() {
           />
         )}
         {activeTab === "ranking" && <StudentRankingPanel accessCode={student.application.accessCode || student.application.applicationNumber} />}
-        {activeTab === "certificates" && (
-          <section className="mt-8 rounded-[2rem] border border-blue-100 bg-white p-7 shadow-sm dark:border-white/10 dark:bg-white/5">
-            <div className="flex flex-wrap items-start justify-between gap-5">
-              <div>
-                <p className="eyebrow">Arquivo pessoal</p>
-                <h2 className="mt-3 font-display text-2xl font-black">Meus certificados</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">Depois da autorização do Diretor, o certificado fica disponível aqui para descarregar diretamente do servidor ou consultar online.</p>
-              </div>
-              <FileBadge2 className="h-10 w-10 text-[#e0a900]" />
-            </div>
-            <div className="mt-7 rounded-2xl bg-[#f8fbff] p-5 dark:bg-white/5">
-              <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="font-bold">{student.application.courseTitle}</p><p className="mt-1 text-sm text-slate-500">Nota final: {student.progress?.latestScore ?? "—"}%</p></div><span className={`rounded-full px-3 py-1 text-xs font-bold ${student.progress?.certificateStatus === "approved" ? "bg-emerald-100 text-emerald-700" : student.progress?.certificateStatus === "pending" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>{student.progress?.certificateStatus === "approved" ? "Liberado" : student.progress?.certificateStatus === "pending" ? "Em análise" : "Ainda não emitido"}</span></div>
-              {student.progress?.certificateStatus === "approved" && student.progress.qrToken ? <div className="mt-5 flex flex-wrap gap-3"><a href={`/api/download/certificate/${student.progress.qrToken}`} download className="inline-flex items-center gap-2 rounded-full bg-[#f3bd08] px-5 py-3 font-extrabold text-[#082d70]"><Download className="h-4 w-4" /> Descarregar PDF do servidor</a><Link href={`/validar/${student.progress.qrToken}`} className="inline-flex items-center gap-2 rounded-full border border-blue-200 px-5 py-3 font-extrabold text-[#0b45ad] dark:border-white/20 dark:text-white"><ExternalLink className="h-4 w-4" /> Ver certificado</Link></div> : <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">{student.progress?.certificateStatus === "pending" ? "O seu pedido está pendente da autorização do Diretor. Esta aba será atualizada automaticamente." : "Conclua o teste e aguarde a análise para solicitar o certificado."}</p>}
-            </div>
-          </section>
-        )}
+        {activeTab === "certificates" && <StudentCertificatePanel courseTitle={student.application.courseTitle} progress={student.progress} />}
         {activeTab === "messages" && (
           <section className="mt-8 grid gap-8 lg:grid-cols-[.8fr_1.2fr]">
             <div className="rounded-[2rem] border border-blue-100 bg-white p-7 dark:border-white/10 dark:bg-white/5">

@@ -2,6 +2,12 @@ export const PRACTICAL_LESSONS_URL = "https://drive.google.com/drive/folders/1iY
 export const COURSE_LESSON_URL = "https://share.minicoursegenerator.com/eletricidade-basica-para-instalacoes-residenciais-em-baixa-tensao-dc8d9d";
 export const EXAM_UNLOCK_DELAY_MS = 12 * 60 * 60 * 1000;
 export function examUnlockAt(approvedAt: Date) { return new Date(approvedAt.getTime() + EXAM_UNLOCK_DELAY_MS); }
+export function formatExamCountdown(milliseconds: number) {
+  const seconds = Math.ceil(Math.max(0, milliseconds) / 1000);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+}
 
 export const EXAM_QUESTIONS = [
   { id: 1, question: "Qual é a unidade de medida da tensão elétrica?", options: ["Ampere", "Volt", "Ohm", "Watt"] },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ANSWER_KEY, examUnlockAt, scoreExam } from "../shared/course";
+import { ANSWER_KEY, examUnlockAt, formatExamCountdown, scoreExam } from "../shared/course";
 import { buildCertificateFallbackReport, cohortWindow, rankingDisplayName } from "./db";
 import { readFileSync } from "node:fs";
 import { blankCourseExam } from "../client/src/components/CourseExamEditor";
@@ -37,6 +37,10 @@ describe("turmas e avaliação", () => {
     const approvedAt = new Date("2026-10-01T06:00:00.000Z");
     expect(examUnlockAt(approvedAt)).toEqual(new Date("2026-10-01T18:00:00.000Z"));
     expect(examUnlockAt(approvedAt).getTime()).toBeGreaterThan(new Date("2026-10-01T17:59:59.999Z").getTime());
+    expect(formatExamCountdown(12 * 60 * 60 * 1000)).toBe("12:00:00");
+    expect(formatExamCountdown(1000)).toBe("00:00:01");
+    expect(formatExamCountdown(0)).toBe("00:00:00");
+    expect(studentPage).toContain('Já Sou Eletricista · ${remainingText}');
   });
   it("confere a elegibilidade no servidor, antes de consultar ou gravar o teste", () => {
     expect(server).toContain('student.progress.accessUnlockAt.getTime() > Date.now()');

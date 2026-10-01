@@ -19,6 +19,7 @@ describe("training pricing and Vitrine media", () => {
     const coordination = readFileSync("client/src/pages/Coordenacao.tsx", "utf8");
     const home = readFileSync("client/src/pages/Home.tsx", "utf8");
     const student = readFileSync("client/src/pages/Aluno.tsx", "utf8");
+    const studentCertificate = readFileSync("client/src/components/StudentCertificatePanel.tsx", "utf8");
     expect(db).toContain("uploadContentMedia");
     expect(db).toContain("deleteContent");
     expect(db).toContain("application/octet-stream");
@@ -32,6 +33,6 @@ describe("training pricing and Vitrine media", () => {
     expect(home).toContain("isScrolled");
     expect(home).toContain("home-site-header");
     expect(student).toContain("Meus certificados");
-    expect(student).toContain("Descarregar PDF do servidor");
+    expect(studentCertificate).toContain("Descarregar PDF do servidor");
   });
 });

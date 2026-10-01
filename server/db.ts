@@ -94,6 +94,22 @@ export async function listCourses(): Promise<PublicCourseRow[]> {
   return value;
 }
 
+export async function listManagedCourses(): Promise<PublicCourseRow[]> {
+  const db = await getDb();
+  if (!db) return [];
+  await ensureDefaultCourse();
+  return db.select({ id: courses.id, title: courses.title, slug: courses.slug, description: courses.description, hours: courses.hours, lessonUrl: courses.lessonUrl, coverUrl: courses.coverUrl, active: courses.active, createdAt: courses.createdAt, updatedAt: courses.updatedAt }).from(courses).orderBy(desc(courses.createdAt));
+}
+
+export async function updateCourseLessonUrl(id: number, lessonUrl: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.update(courses).set({ lessonUrl }).where(eq(courses.id, id));
+  if (!result[0].affectedRows) throw new Error("Curso não encontrado.");
+  coursesCache = null;
+  return { success: true as const };
+}
+
 export async function createCourse(input: { title: string; slug: string; description: string; hours: number; lessonUrl: string; examQuestions: CourseExamQuestion[] }) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
