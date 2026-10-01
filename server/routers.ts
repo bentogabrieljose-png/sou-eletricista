@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { COURSE_LESSON_URL, EXAM_QUESTIONS, scoreExam } from "../shared/course";
-import { addNotebookPage, authorizeCertificate, authorizeCertificateReprint, buildCertificateFallbackReport, clearNotebookPage, createApplication, createCertificateReprint, createContent, createCourse, createMessage, deleteApplicationPermanently, deleteStudentDataPermanently, ensureCertificatePending, getApplicationByNumber, getCertificateByToken, getCertificateReprintStatus, getCurrentTrainingPrice, getNotebook, getStudentByCode, listApplications, listCertificateReprints, listCertificateRequests, listContent, listCourses, listMessages, listMaterialProgress, listNotebookVersions, listIssuedCertificates, markMaterialViewed, restoreNotebookVersion, saveCertificatePreflight, certificatePreflightInput, saveNotebookPage, startCourse, submitExam, updateApplicationStatus, uploadContentMedia, uploadNotebookImage } from "./db";
+import { addNotebookPage, authorizeCertificate, authorizeCertificateReprint, buildCertificateFallbackReport, clearNotebookPage, createApplication, createCertificateReprint, createContent, createCourse, createMessage, deleteApplicationPermanently, deleteContent, deleteStudentDataPermanently, ensureCertificatePending, getApplicationByNumber, getCertificateByToken, getCertificateReprintStatus, getCurrentTrainingPrice, getNotebook, getStudentByCode, listApplications, listCertificateReprints, listCertificateRequests, listContent, listCourses, listMessages, listMaterialProgress, listNotebookVersions, listIssuedCertificates, markMaterialViewed, restoreNotebookVersion, saveCertificatePreflight, certificatePreflightInput, saveNotebookPage, startCourse, submitExam, updateApplicationStatus, uploadContentMedia, uploadNotebookImage } from "./db";
 import { invokeLLM } from "./_core/llm";
 import { COOKIE_NAME, COORDINATION_COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -21,6 +21,36 @@ const applicationInput = z.object({
   fullName: z.string().min(3), email: z.string().email(), nif: z.string().min(3), phone: z.string().min(6),
   courseTitle: z.string().min(3), paymentMethod: z.string().min(2), proofData: z.string().optional(), proofName: z.string().optional(), proofType: z.string().optional(),
 });
+
+async function inspectEnrollmentProof(input: z.infer<typeof applicationInput>) {
+  if (!input.proofData || !input.proofType) {
+    return { status: "review" as const, report: "Comprovativo ausente ou sem tipo legível; revisão manual obrigatória." };
+  }
+  if (input.proofType === "application/pdf") {
+    return { status: "review" as const, report: "PDF recebido. A consistência automática de nome, NIF, método e valor requer revisão do comprovativo pelo Diretor." };
+  }
+  try {
+    const price = getCurrentTrainingPrice();
+    const inspection = await invokeLLM({
+      model: "gpt-5-nano",
+      maxTokens: 280,
+      messages: [
+        { role: "system", content: "Inspecione rapidamente um comprovativo de pagamento de inscrição. Não declare que um documento é genuíno nem consulte bases governamentais: apenas avalie consistência visual e textual. Compare nome, NIF, método escolhido e valor esperado. Se um campo estiver ilegível ou não puder ser confirmado, use review. Responda apenas no JSON pedido." },
+        { role: "user", content: [
+          { type: "text", text: JSON.stringify({ candidateName: input.fullName, candidateNif: input.nif, selectedMethod: input.paymentMethod, expectedAmountKz: price.amountKz, expectedAmountEuro: price.amountEuro, warning: "A análise é uma triagem de consistência; a Coordenação mantém a decisão final." }) },
+          { type: "image_url", image_url: { url: input.proofData, detail: "low" } },
+        ] },
+      ],
+      response_format: { type: "json_schema", json_schema: { name: "enrollment_proof_inspection", strict: true, schema: { type: "object", properties: { status: { type: "string", enum: ["consistent", "review", "inconsistent"] }, nameMatches: { type: "boolean" }, nifMatches: { type: "boolean" }, methodMatches: { type: "boolean" }, amountMatches: { type: "boolean" }, legible: { type: "boolean" }, notes: { type: "array", items: { type: "string" } } }, required: ["status", "nameMatches", "nifMatches", "methodMatches", "amountMatches", "legible", "notes"], additionalProperties: false } } },
+    });
+    const parsed = JSON.parse(String(inspection.choices?.[0]?.message?.content || "{}"));
+    const report = JSON.stringify({ ...parsed, checkedAt: new Date().toISOString(), limitation: "Triagem automática de consistência; não substitui a verificação humana de autenticidade." });
+    return { status: parsed.status as "consistent" | "review" | "inconsistent", report };
+  } catch (error) {
+    console.warn("[Application] proof inspection unavailable:", error);
+    return { status: "review" as const, report: "A inspeção automática não respondeu; revisão manual obrigatória antes da aprovação." };
+  }
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -50,7 +80,10 @@ export const appRouter = router({
     content: publicProcedure.query(() => listContent(true)),
     applicationStatus: publicProcedure.input(z.object({ applicationNumber: z.string().min(4) })).query(({ input }) => getApplicationByNumber(input.applicationNumber)),
     certificate: publicProcedure.input(z.object({ token: z.string().min(8) })).query(({ input }) => getCertificateByToken(input.token)),
-    createApplication: publicProcedure.input(applicationInput).mutation(({ input }) => createApplication(input)),
+    createApplication: publicProcedure.input(applicationInput).mutation(async ({ input }) => {
+      const inspection = await inspectEnrollmentProof(input);
+      return createApplication({ ...input, proofInspectionStatus: inspection.status, proofInspectionReport: inspection.report });
+    }),
   }),
   student: router({
     getByCode: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(async ({ input }) => {
@@ -146,6 +179,7 @@ export const appRouter = router({
     messages: adminProcedure.query(() => listMessages()),
     reply: adminProcedure.input(z.object({ applicationId: z.number(), subject: z.string().min(2), body: z.string().min(2) })).mutation(({ input }) => createMessage({ applicationId: input.applicationId, fromRole: "coordination", subject: input.subject, body: input.body })),
     content: adminProcedure.query(() => listContent(false)),
+    deleteContent: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(({ input }) => deleteContent(input.id)),
     uploadContentMedia: adminProcedure.input(z.object({ fileName: z.string().min(1).max(255), contentType: z.string().min(3).max(120), data: z.string().min(20).max(120000000) })).mutation(({ input }) => uploadContentMedia(input)),
     createContent: adminProcedure.input(z.object({ kind: z.enum(["welcome_video", "course_video", "update"]), title: z.string().min(2), body: z.string().optional(), mediaUrl: z.string().min(1).optional() })).mutation(({ input }) => createContent(input)),
     createCourse: adminProcedure.input(z.object({ title: z.string().min(3), slug: z.string().min(3), description: z.string().min(10), hours: z.number().int().positive(), lessonUrl: z.string().url() })).mutation(({ input }) => createCourse(input)),

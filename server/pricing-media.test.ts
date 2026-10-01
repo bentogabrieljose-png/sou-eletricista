@@ -15,12 +15,23 @@ describe("training pricing and Vitrine media", () => {
   it("keeps upload, storage, and format rendering wired end to end", () => {
     const db = readFileSync("server/db.ts", "utf8");
     const router = readFileSync("server/routers.ts", "utf8");
+    const schema = readFileSync("drizzle/schema.ts", "utf8");
     const coordination = readFileSync("client/src/pages/Coordenacao.tsx", "utf8");
     const home = readFileSync("client/src/pages/Home.tsx", "utf8");
+    const student = readFileSync("client/src/pages/Aluno.tsx", "utf8");
     expect(db).toContain("uploadContentMedia");
-    expect(db).toContain("video/");
+    expect(db).toContain("deleteContent");
+    expect(db).toContain("application/octet-stream");
     expect(router).toContain("uploadContentMedia");
-    expect(coordination).toContain("accept=\"video/*,audio/*,image/*,application/pdf\"");
+    expect(router).toContain("inspectEnrollmentProof");
+    expect(router).toContain("deleteContent");
+    expect(schema).toContain("proofInspectionStatus");
+    expect(coordination).toContain('accept="*/*"');
+    expect(coordination).toContain("Eliminar permanentemente este conteúdo da Vitrine");
     expect(home).toContain("MediaPreview");
+    expect(home).toContain("isScrolled");
+    expect(home).toContain("home-site-header");
+    expect(student).toContain("Meus certificados");
+    expect(student).toContain("Descarregar PDF do servidor");
   });
 });

@@ -35,7 +35,7 @@ export default function Aluno() {
   const [showExam, setShowExam] = useState(false);
   const [answers, setAnswers] = useState<number[]>(Array(10).fill(-1));
   const [activeTab, setActiveTab] = useState<
-    "overview" | "messages" | "assistant" | "notebook"
+    "overview" | "messages" | "assistant" | "notebook" | "certificates"
   >("overview");
   const [chat, setChat] = useState<
     { role: "user" | "assistant"; content: string }[]
@@ -376,6 +376,12 @@ export default function Aluno() {
             <NotebookPen className="h-4 w-4" /> Caderno
           </button>
           <button
+            onClick={() => setActiveTab("certificates")}
+            className={`tab-button ${activeTab === "certificates" ? "tab-active" : ""}`}
+          >
+            <FileBadge2 className="h-4 w-4" /> Meus certificados
+          </button>
+          <button
             onClick={() => setActiveTab("assistant")}
             className={`tab-button ${activeTab === "assistant" ? "tab-active" : ""}`}
           >
@@ -491,6 +497,22 @@ export default function Aluno() {
             }
             studentName={student.application.fullName}
           />
+        )}
+        {activeTab === "certificates" && (
+          <section className="mt-8 rounded-[2rem] border border-blue-100 bg-white p-7 shadow-sm dark:border-white/10 dark:bg-white/5">
+            <div className="flex flex-wrap items-start justify-between gap-5">
+              <div>
+                <p className="eyebrow">Arquivo pessoal</p>
+                <h2 className="mt-3 font-display text-2xl font-black">Meus certificados</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">Depois da autorização do Diretor, o certificado fica disponível aqui para descarregar diretamente do servidor ou consultar online.</p>
+              </div>
+              <FileBadge2 className="h-10 w-10 text-[#e0a900]" />
+            </div>
+            <div className="mt-7 rounded-2xl bg-[#f8fbff] p-5 dark:bg-white/5">
+              <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="font-bold">{student.application.courseTitle}</p><p className="mt-1 text-sm text-slate-500">Nota final: {student.progress?.latestScore ?? "—"}%</p></div><span className={`rounded-full px-3 py-1 text-xs font-bold ${student.progress?.certificateStatus === "approved" ? "bg-emerald-100 text-emerald-700" : student.progress?.certificateStatus === "pending" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>{student.progress?.certificateStatus === "approved" ? "Liberado" : student.progress?.certificateStatus === "pending" ? "Em análise" : "Ainda não emitido"}</span></div>
+              {student.progress?.certificateStatus === "approved" && student.progress.qrToken ? <div className="mt-5 flex flex-wrap gap-3"><a href={`/api/download/certificate/${student.progress.qrToken}`} download className="inline-flex items-center gap-2 rounded-full bg-[#f3bd08] px-5 py-3 font-extrabold text-[#082d70]"><Download className="h-4 w-4" /> Descarregar PDF do servidor</a><Link href={`/validar/${student.progress.qrToken}`} className="inline-flex items-center gap-2 rounded-full border border-blue-200 px-5 py-3 font-extrabold text-[#0b45ad] dark:border-white/20 dark:text-white"><ExternalLink className="h-4 w-4" /> Ver certificado</Link></div> : <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">{student.progress?.certificateStatus === "pending" ? "O seu pedido está pendente da autorização do Diretor. Esta aba será atualizada automaticamente." : "Conclua o teste e aguarde a análise para solicitar o certificado."}</p>}
+            </div>
+          </section>
         )}
         {activeTab === "messages" && (
           <section className="mt-8 grid gap-8 lg:grid-cols-[.8fr_1.2fr]">

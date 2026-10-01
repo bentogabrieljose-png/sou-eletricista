@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { ArrowRight, BookOpen, CheckCircle2, Clock3, Lightbulb, Moon, PlayCircle, PlugZap, Share2, ShieldCheck, Sun, Users, Zap } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -13,10 +14,11 @@ function MediaPreview({ url }: { url: string }) {
   if (/\.(mp3|wav|ogg|m4a|aac)(_|$)/.test(clean)) return <div className="flex aspect-video items-center justify-center bg-[#0b45ad] p-6"><audio className="w-full" controls src={url} /></div>;
   if (/\.(png|jpe?g|gif|webp|svg)(_|$)/.test(clean)) return <div className="aspect-video bg-slate-100"><img className="h-full w-full object-cover" src={url} alt="Conteúdo da Vitrine" /></div>;
   if (/\.(pdf)(_|$)/.test(clean)) return <div className="flex aspect-video items-center justify-center bg-[#0b45ad] p-6"><a className="rounded-full bg-[#ffd326] px-5 py-3 font-extrabold text-[#082d70]" href={url} target="_blank" rel="noreferrer">Abrir PDF</a></div>;
-  return <div className="aspect-video bg-black"><video className="h-full w-full object-cover" controls preload="metadata" src={url} /></div>;
+  return <div className="relative aspect-video bg-black"><video className="h-full w-full object-cover" controls preload="metadata" src={url} /><a className="absolute bottom-3 right-3 rounded-full bg-white/90 px-3 py-2 text-xs font-extrabold text-[#082d70] shadow" href={url} target="_blank" rel="noreferrer">Abrir / descarregar</a></div>;
 }
 
 export default function Home() {
+  const [isScrolled, setIsScrolled] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { data: courses } = trpc.public.courses.useQuery();
   const { data: content } = trpc.public.content.useQuery();
@@ -26,6 +28,13 @@ export default function Home() {
   const videos = content?.filter(item => item.kind !== "update").slice(0, 2) ?? [];
   const isLoading = courses === undefined || content === undefined;
 
+  useEffect(() => {
+    const onScroll = () => setIsScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const shareCenter = async () => {
     const shareData = { title: "Sou Eletricista", text: "Conheça o Sou Eletricista e comece a sua formação em eletricidade.", url: window.location.origin };
     if (navigator.share) await navigator.share(shareData);
@@ -34,7 +43,7 @@ export default function Home() {
 
   return (
     <div className="site-lightning-bg min-h-screen overflow-hidden bg-[#f8fbff] text-[#12213a] dark:bg-[#07111f] dark:text-white">
-      <header className="sticky top-0 z-40 border-b border-blue-100/80 bg-white/90 backdrop-blur dark:border-white/10 dark:bg-[#07111f]/90">
+      <header className={`home-site-header sticky top-0 z-40 border-b border-blue-100/80 bg-white/90 backdrop-blur dark:border-white/10 dark:bg-[#07111f]/90 ${isScrolled ? "is-scrolled" : ""}`}>
         <div className="container flex h-20 items-center justify-between gap-5">
           <Link href="/" className="flex shrink-0 items-center gap-3">
             <img src={LOGO} alt="Sou Eletricista" className="h-14 w-14 rounded-full object-cover shadow-sm" />

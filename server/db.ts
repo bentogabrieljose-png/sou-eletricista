@@ -99,6 +99,8 @@ export async function createCourse(input: { title: string; slug: string; descrip
 export async function createApplication(input: {
   fullName: string; email: string; nif: string; phone: string; courseTitle: string; paymentMethod: string;
   proofData?: string; proofName?: string; proofType?: string;
+  proofInspectionStatus?: "not_checked" | "consistent" | "review" | "inconsistent";
+  proofInspectionReport?: string;
 }) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
@@ -590,17 +592,23 @@ export async function createContent(input: { kind: "welcome_video" | "course_vid
   return (await db.select().from(contentItems).orderBy(desc(contentItems.createdAt)).limit(1))[0];
 }
 
+export async function deleteContent(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.delete(contentItems).where(eq(contentItems.id, id));
+  publicContentCache = null;
+  return { success: true } as const;
+}
+
 export function getCurrentTrainingPrice() {
   return getTrainingPrice();
 }
 
 export async function uploadContentMedia(input: { fileName: string; contentType: string; data: string }) {
-  const allowed = input.contentType.startsWith("video/") || input.contentType.startsWith("audio/") || input.contentType.startsWith("image/") || input.contentType === "application/pdf";
-  if (!allowed) throw new Error("Formato multimédia não suportado. Use vídeo, áudio, imagem ou PDF.");
   const raw = input.data.replace(/^data:[^;]+;base64,/, "");
   const bytes = Buffer.from(raw, "base64");
   if (bytes.length > 80 * 1024 * 1024) throw new Error("O ficheiro deve ter no máximo 80 MB.");
   const { storagePut } = await import("./storage");
   const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-140) || "conteudo-media";
-  return storagePut(`content/${Date.now()}-${safeName}`, bytes, input.contentType);
+  return storagePut(`content/${Date.now()}-${safeName}`, bytes, input.contentType || "application/octet-stream");
 }
