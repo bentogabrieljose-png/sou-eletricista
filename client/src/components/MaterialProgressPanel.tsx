@@ -8,16 +8,17 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
-import { PRACTICAL_LESSONS_URL } from "@shared/course";
 
 export function MaterialProgressPanel({
   accessCode,
   courseStarted,
   courseUrl,
+  libraryUrl,
 }: {
   accessCode: string;
   courseStarted: boolean;
   courseUrl?: string;
+  libraryUrl?: string;
 }) {
   const progressQuery = trpc.student.materialProgress.useQuery(
     { accessCode },
@@ -104,13 +105,7 @@ export function MaterialProgressPanel({
         </button>
         <button
           type="button"
-          onClick={() =>
-            openMaterial(
-              "drive-library",
-              "Drive Biblioteca",
-              PRACTICAL_LESSONS_URL
-            )
-          }
+          onClick={() => libraryUrl ? openMaterial("drive-library", "Drive Biblioteca", libraryUrl) : toast.error("Biblioteca indisponível. Aguarde a autorização de acesso ou contacte a Coordenação.")}
           className="group flex items-start gap-4 rounded-2xl border border-[#f3bd08]/60 bg-[#fffaf0] p-5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-[#e0a900] hover:shadow-md dark:bg-[#2b250b]/30"
         >
           <span className="rounded-2xl bg-[#f3bd08] p-3 text-[#082d70]">

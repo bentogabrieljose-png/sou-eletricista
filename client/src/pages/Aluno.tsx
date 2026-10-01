@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link } from "wouter";
-import { PRACTICAL_LESSONS_URL, formatExamCountdown } from "@shared/course";
+import { formatExamCountdown } from "@shared/course";
 import {
   Bot,
   BookOpen,
@@ -73,6 +73,8 @@ export default function Aluno() {
   const student = studentQuery.data || studentSession;
   const courseQuery = trpc.student.course.useQuery({ accessCode: accessCode || "invalid" }, { enabled: Boolean(accessCode) && Boolean(student) });
   const courseUrl = courseQuery.data?.lessonUrl;
+  const libraryQuery = trpc.student.library.useQuery({ accessCode: accessCode || "invalid" }, { enabled: Boolean(accessCode) && Boolean(student), retry: false, staleTime: 30000 });
+  const libraryUrl = libraryQuery.data?.url;
   const examQuery = trpc.student.exam.useQuery(
     { accessCode: accessCode || "invalid" },
     { enabled: showExam && Boolean(accessCode) }
@@ -491,6 +493,7 @@ export default function Aluno() {
               }
               courseStarted={Boolean(student.progress?.startedAt)}
               courseUrl={courseUrl}
+              libraryUrl={libraryUrl}
             />
           </>
         )}
@@ -677,8 +680,8 @@ export default function Aluno() {
             </div>
           </div>
         )}
-        <a
-          href={PRACTICAL_LESSONS_URL}
+        {libraryUrl && <a
+          href={libraryUrl}
           target="_blank"
           rel="noopener noreferrer"
           title="Biblioteca: vídeos práticos e livros em PDF"
@@ -692,7 +695,7 @@ export default function Aluno() {
             Explorar a biblioteca
           </span>
           <ExternalLink className="h-4 w-4 opacity-70 transition group-hover:translate-x-0.5" />
-        </a>
+        </a>}
       </main>
     </div>
   );

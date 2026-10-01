@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { scoreExam } from "../shared/course";
+import { PRACTICAL_LESSONS_URL, scoreExam } from "../shared/course";
 import { addNotebookPage, authorizeCertificate, authorizeCertificateReprint, buildCertificateFallbackReport, clearNotebookPage, createApplication, createCertificateReprint, createContent, createCourse, createMessage, deleteApplicationPermanently, deleteContent, deleteStudentDataPermanently, ensureCertificatePending, getApplicationByNumber, getApplicationStats, getCertificateByToken, getCertificateReprintStatus, getCourseAssessment, getCurrentTrainingPrice, getNotebook, getStudentByCode, getStudentCourse, getStudentRanking, listApplicationsPage, listManagedCourses, listCertificateReprints, listCertificateRequests, listContent, listCourses, listMessages, listMaterialProgress, listNotebookVersions, listIssuedCertificates, markMaterialViewed, restoreNotebookVersion, saveCertificatePreflight, certificatePreflightInput, saveNotebookPage, startCourse, submitExam, updateApplicationStatus, uploadContentMedia, uploadNotebookImage, updateCourseLessonUrl } from "./db";
 import { invokeLLM } from "./_core/llm";
 import { COOKIE_NAME, COORDINATION_COOKIE_NAME } from "@shared/const";
@@ -106,6 +106,11 @@ export const appRouter = router({
     }),
     startCourse: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).mutation(({ input }) => startCourse(input.accessCode)),
     course: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(({ input }) => getStudentCourse(input.accessCode)),
+    library: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(async ({ input }) => {
+      const student = await getStudentByCode(input.accessCode);
+      if (!student || student.application.status !== "approved") throw new TRPCError({ code: "FORBIDDEN", message: "Biblioteca reservada aos alunos com inscrição aprovada e acesso ativo." });
+      return { url: PRACTICAL_LESSONS_URL };
+    }),
     ranking: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(({ input }) => getStudentRanking(input.accessCode)),
     materialProgress: publicProcedure.input(z.object({ accessCode: z.string().min(5) })).query(({ input }) => listMaterialProgress(input.accessCode)),
     markMaterialViewed: publicProcedure.input(z.object({ accessCode: z.string().min(5), materialKey: z.string().min(2).max(120), materialTitle: z.string().min(2).max(255), resourceUrl: z.string().url().optional() })).mutation(({ input }) => markMaterialViewed(input.accessCode, input)),
