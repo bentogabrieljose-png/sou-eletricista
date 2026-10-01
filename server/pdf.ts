@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, degrees, rgb } from "pdf-lib";
 import QRCode from "qrcode";
 import { storageGetSignedUrl } from "./storage";
 import { CERTIFICATE_CENTER_NAME, CERTIFICATE_DIRECTOR_NAME, CERTIFICATE_DURATION_LABEL, CERTIFICATE_TEMPLATE_ASSET, CERTIFICATE_VERIFICATION_SITE } from "../shared/certificate";
@@ -28,7 +28,7 @@ async function qrPng(url: string) {
   return Buffer.from(data.split(",")[1], "base64");
 }
 
-export async function generateCertificatePdf(input: { fullName: string; courseTitle: string; completedAt?: Date | string | null; score?: number | null; qrToken: string; validationUrl: string }) {
+export async function generateCertificatePdf(input: { fullName: string; courseTitle: string; completedAt?: Date | string | null; score?: number | null; qrToken: string; validationUrl: string; isBestStudent?: boolean }) {
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([A4.width, A4.height]);
   const background = await pdf.embedPng(await officialBackground());
@@ -58,6 +58,15 @@ export async function generateCertificatePdf(input: { fullName: string; courseTi
   page.drawText(CERTIFICATE_DIRECTOR_NAME, { x: 370, y: 205, size: 10, font: regular, color: BLUE });
   page.drawLine({ start: { x: 365, y: 200 }, end: { x: 535, y: 200 }, thickness: 0.7, color: BLUE });
   page.drawText(`Direção · ${CERTIFICATE_CENTER_NAME}`, { x: 393, y: 188, size: 6.5, font, color: BLUE });
+  if (input.isBestStudent || input.score === 100) {
+    const bronze = rgb(0.63, 0.32, 0.12);
+    const cx = 523; const cy = 755;
+    for (let i = 0; i < 8; i += 1) page.drawRectangle({ x: cx - 3, y: cy + 18, width: 6, height: 10, color: bronze, rotate: degrees(i * 45) });
+    page.drawEllipse({ x: cx, y: cy, xScale: 18, yScale: 18, color: bronze, borderColor: rgb(0.82, 0.57, 0.25), borderWidth: 1.5 });
+    page.drawEllipse({ x: cx, y: cy, xScale: 12, yScale: 12, color: rgb(0.82, 0.57, 0.25), borderColor: rgb(0.45, 0.22, 0.08), borderWidth: 1 });
+    page.drawText("100%", { x: cx - 9, y: cy - 2, size: 5.5, font, color: rgb(1, 0.95, 0.82) });
+    page.drawText("MELHOR ALUNO", { x: cx - 29, y: cy - 31, size: 5.2, font, color: bronze });
+  }
   return Buffer.from(await pdf.save());
 }
 

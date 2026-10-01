@@ -77,6 +77,7 @@ export default function Verificar() {
               <div className="certificate-field certificate-date">{formatDate(data.progress.completedAt)}</div>
               <div className="certificate-field certificate-duration">{CERTIFICATE_DURATION_LABEL}</div>
               <div className="certificate-field certificate-score">{data.progress.latestScore ?? 0}%</div>
+              {data.progress.latestScore === 100 && <div className="certificate-best-student-badge" aria-label="Melhor aluno: 100%"><span>100%</span><small>Melhor aluno</small></div>}
               <div className="certificate-qr">{qrCode && <img src={qrCode} alt="QR Code de validação digital" />}</div>
               <div className="certificate-field certificate-code">{data.progress.qrToken}</div>
               <div className="certificate-field certificate-site">{CERTIFICATE_VERIFICATION_SITE || siteLabel}</div>

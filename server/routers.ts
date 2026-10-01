@@ -181,7 +181,7 @@ export const appRouter = router({
     content: adminProcedure.query(() => listContent(false)),
     deleteContent: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(({ input }) => deleteContent(input.id)),
     uploadContentMedia: adminProcedure.input(z.object({ fileName: z.string().min(1).max(255), contentType: z.string().min(3).max(120), data: z.string().min(20).max(120000000) })).mutation(({ input }) => uploadContentMedia(input)),
-    createContent: adminProcedure.input(z.object({ kind: z.enum(["welcome_video", "course_video", "update"]), title: z.string().min(2), body: z.string().optional(), mediaUrl: z.string().min(1).optional() })).mutation(({ input }) => createContent(input)),
+    createContent: adminProcedure.input(z.object({ kind: z.enum(["welcome_video", "course_video", "update"]), title: z.string().min(2), body: z.string().optional(), mediaUrl: z.string().min(1).optional(), mediaPosterUrl: z.string().url().optional(), mediaDurationSeconds: z.number().int().nonnegative().optional(), mediaProcessingStatus: z.enum(["not_applicable", "processed", "original"]).optional() })).mutation(({ input }) => createContent(input)),
     createCourse: adminProcedure.input(z.object({ title: z.string().min(3), slug: z.string().min(3), description: z.string().min(10), hours: z.number().int().positive(), lessonUrl: z.string().url() })).mutation(({ input }) => createCourse(input)),
   }),
 });

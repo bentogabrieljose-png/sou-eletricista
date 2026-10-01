@@ -33,7 +33,7 @@ app.get("/api/download/certificate/:token", async (req, res) => {
     const certificate = await getCertificateByToken(req.params.token);
     if (!certificate) return res.status(404).json({ error: "Certificado não encontrado." });
     const origin = `${req.protocol}://${req.get("host")}`;
-    const pdf = await generateCertificatePdf({ fullName: certificate.application.fullName, courseTitle: certificate.application.courseTitle, completedAt: certificate.progress.completedAt, score: certificate.progress.latestScore, qrToken: certificate.progress.qrToken || req.params.token, validationUrl: `${origin}/validar/${certificate.progress.qrToken || req.params.token}` });
+    const pdf = await generateCertificatePdf({ fullName: certificate.application.fullName, courseTitle: certificate.application.courseTitle, completedAt: certificate.progress.completedAt, score: certificate.progress.latestScore, isBestStudent: certificate.progress.latestScore === 100, qrToken: certificate.progress.qrToken || req.params.token, validationUrl: `${origin}/validar/${certificate.progress.qrToken || req.params.token}` });
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="certificado-${(certificate.application.fullName || "aluno").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.pdf"`);
     res.setHeader("Cache-Control", "private, no-store");
@@ -56,7 +56,7 @@ app.get("/api/download/reprint/:token", async (req, res) => {
     const item = await getCertificateReprintByToken(req.params.token);
     if (!item) return res.status(404).json({ error: "Segunda via não encontrada, já descarregada ou ainda não autorizada." });
     const origin = `${req.protocol}://${req.get("host")}`;
-    const pdf = await generateCertificatePdf({ fullName: item.progress.studentName || "Aluno", courseTitle: item.progress.courseTitle || "Curso", completedAt: item.progress.completedAt, score: item.progress.latestScore, qrToken: item.progress.qrToken || "", validationUrl: `${origin}/validar/${item.progress.qrToken || ""}` });
+    const pdf = await generateCertificatePdf({ fullName: item.progress.studentName || "Aluno", courseTitle: item.progress.courseTitle || "Curso", completedAt: item.progress.completedAt, score: item.progress.latestScore, isBestStudent: item.progress.latestScore === 100, qrToken: item.progress.qrToken || "", validationUrl: `${origin}/validar/${item.progress.qrToken || ""}` });
     await markCertificateReprintDownloaded(item.request.id);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="segunda-via-certificado-${item.request.id}.pdf"`);

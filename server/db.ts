@@ -1,6 +1,10 @@
 import { and, desc, eq, isNotNull, isNull, lt, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { nanoid } from "nanoid";
+import { execFile } from "node:child_process";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { promisify } from "node:util";
 import { InsertUser, applications, certificateReprintRequests, contentItems, courses, examAttempts, materialProgress, messages, notebookPages, notebookVersions, notebooks, studentProgress, users } from "../drizzle/schema";
 import { COURSE_LESSON_URL } from "../shared/course";
 import { CERTIFICATE_CENTER_NAME, CERTIFICATE_DIRECTOR_NAME, CERTIFICATE_DURATION_LABEL, CERTIFICATE_TEMPLATE_VERSION } from "../shared/certificate";
@@ -15,6 +19,7 @@ type CourseRow = typeof courses.$inferSelect;
 type ContentRow = typeof contentItems.$inferSelect;
 let coursesCache: TtlCacheEntry<CourseRow[]> | null = null;
 let publicContentCache: TtlCacheEntry<ContentRow[]> | null = null;
+const execFileAsync = promisify(execFile);
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
@@ -584,7 +589,7 @@ export async function listContent(publicOnly = true): Promise<ContentRow[]> {
   return value;
 }
 
-export async function createContent(input: { kind: "welcome_video" | "course_video" | "update"; title: string; body?: string; mediaUrl?: string }) {
+export async function createContent(input: { kind: "welcome_video" | "course_video" | "update"; title: string; body?: string; mediaUrl?: string; mediaPosterUrl?: string; mediaDurationSeconds?: number; mediaProcessingStatus?: "not_applicable" | "processed" | "original" }) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.insert(contentItems).values(input);
@@ -610,5 +615,27 @@ export async function uploadContentMedia(input: { fileName: string; contentType:
   if (bytes.length > 80 * 1024 * 1024) throw new Error("O ficheiro deve ter no máximo 80 MB.");
   const { storagePut } = await import("./storage");
   const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-140) || "conteudo-media";
-  return storagePut(`content/${Date.now()}-${safeName}`, bytes, input.contentType || "application/octet-stream");
+  const isVideo = input.contentType.startsWith("video/") || /\.(mp4|mov|mkv|avi|webm|m4v|mpeg|mpg|3gp)$/i.test(input.fileName);
+  if (!isVideo) return { ...(await storagePut(`content/${Date.now()}-${safeName}`, bytes, input.contentType || "application/octet-stream")), processingStatus: "original" as const, durationSeconds: null, posterUrl: null };
+  const workDir = await mkdtemp(`${tmpdir()}/sou-eletricista-video-`);
+  const sourcePath = `${workDir}/${safeName}`;
+  const optimizedPath = `${workDir}/optimized.mp4`;
+  const posterPath = `${workDir}/poster.jpg`;
+  try {
+    await writeFile(sourcePath, bytes);
+    const { stdout } = await execFileAsync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", sourcePath], { timeout: 30_000 });
+    const durationSeconds = Math.max(0, Math.round(Number.parseFloat(stdout.trim()) || 0));
+    await execFileAsync("ffmpeg", ["-y", "-i", sourcePath, "-vf", "scale=w=1280:h=720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2:color=black", "-c:v", "libx264", "-preset", "veryfast", "-crf", "28", "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", optimizedPath], { timeout: 120_000 });
+    await execFileAsync("ffmpeg", ["-y", "-ss", "0", "-i", sourcePath, "-frames:v", "1", "-vf", "scale=w=640:h=360:force_original_aspect_ratio=decrease,pad=640:360:(ow-iw)/2:(oh-ih)/2:color=black", "-q:v", "5", posterPath], { timeout: 30_000 });
+    const [optimizedBytes, posterBytes] = await Promise.all([readFile(optimizedPath), readFile(posterPath)]);
+    const stamp = Date.now();
+    const optimized = await storagePut(`content/${stamp}-${safeName.replace(/\.[^.]+$/, "")}.mp4`, optimizedBytes, "video/mp4");
+    const poster = await storagePut(`content/${stamp}-${safeName.replace(/\.[^.]+$/, "")}-poster.jpg`, posterBytes, "image/jpeg");
+    return { ...optimized, processingStatus: "processed" as const, durationSeconds, posterUrl: poster.url };
+  } catch (error) {
+    console.warn("[Vitrine] video processing fallback:", error);
+    return { ...(await storagePut(`content/${Date.now()}-${safeName}`, bytes, input.contentType || "application/octet-stream")), processingStatus: "original" as const, durationSeconds: null, posterUrl: null };
+  } finally {
+    await rm(workDir, { recursive: true, force: true });
+  }
 }
