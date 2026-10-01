@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { COURSE_LESSON_URL, EXAM_QUESTIONS, scoreExam } from "../shared/course";
-import { addNotebookPage, authorizeCertificate, authorizeCertificateReprint, buildCertificateFallbackReport, clearNotebookPage, createApplication, createCertificateReprint, createContent, createCourse, createMessage, deleteApplicationPermanently, deleteStudentDataPermanently, ensureCertificatePending, getApplicationByNumber, getCertificateByToken, getCertificateReprintStatus, getNotebook, getStudentByCode, listApplications, listCertificateRequests, listCertificateReprints, listContent, listCourses, listMessages, listMaterialProgress, listNotebookVersions, listIssuedCertificates, markMaterialViewed, restoreNotebookVersion, saveCertificatePreflight, certificatePreflightInput, saveNotebookPage, startCourse, submitExam, updateApplicationStatus, uploadNotebookImage } from "./db";
+import { addNotebookPage, authorizeCertificate, authorizeCertificateReprint, buildCertificateFallbackReport, clearNotebookPage, createApplication, createCertificateReprint, createContent, createCourse, createMessage, deleteApplicationPermanently, deleteStudentDataPermanently, ensureCertificatePending, getApplicationByNumber, getCertificateByToken, getCertificateReprintStatus, getCurrentTrainingPrice, getNotebook, getStudentByCode, listApplications, listCertificateReprints, listCertificateRequests, listContent, listCourses, listMessages, listMaterialProgress, listNotebookVersions, listIssuedCertificates, markMaterialViewed, restoreNotebookVersion, saveCertificatePreflight, certificatePreflightInput, saveNotebookPage, startCourse, submitExam, updateApplicationStatus, uploadContentMedia, uploadNotebookImage } from "./db";
 import { invokeLLM } from "./_core/llm";
 import { COOKIE_NAME, COORDINATION_COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -46,6 +46,7 @@ export const appRouter = router({
   }),
   public: router({
     courses: publicProcedure.query(() => listCourses()),
+    pricing: publicProcedure.query(() => getCurrentTrainingPrice()),
     content: publicProcedure.query(() => listContent(true)),
     applicationStatus: publicProcedure.input(z.object({ applicationNumber: z.string().min(4) })).query(({ input }) => getApplicationByNumber(input.applicationNumber)),
     certificate: publicProcedure.input(z.object({ token: z.string().min(8) })).query(({ input }) => getCertificateByToken(input.token)),
@@ -145,7 +146,8 @@ export const appRouter = router({
     messages: adminProcedure.query(() => listMessages()),
     reply: adminProcedure.input(z.object({ applicationId: z.number(), subject: z.string().min(2), body: z.string().min(2) })).mutation(({ input }) => createMessage({ applicationId: input.applicationId, fromRole: "coordination", subject: input.subject, body: input.body })),
     content: adminProcedure.query(() => listContent(false)),
-    createContent: adminProcedure.input(z.object({ kind: z.enum(["welcome_video", "course_video", "update"]), title: z.string().min(2), body: z.string().optional(), mediaUrl: z.string().optional() })).mutation(({ input }) => createContent(input)),
+    uploadContentMedia: adminProcedure.input(z.object({ fileName: z.string().min(1).max(255), contentType: z.string().min(3).max(120), data: z.string().min(20).max(120000000) })).mutation(({ input }) => uploadContentMedia(input)),
+    createContent: adminProcedure.input(z.object({ kind: z.enum(["welcome_video", "course_video", "update"]), title: z.string().min(2), body: z.string().optional(), mediaUrl: z.string().min(1).optional() })).mutation(({ input }) => createContent(input)),
     createCourse: adminProcedure.input(z.object({ title: z.string().min(3), slug: z.string().min(3), description: z.string().min(10), hours: z.number().int().positive(), lessonUrl: z.string().url() })).mutation(({ input }) => createCourse(input)),
   }),
 });

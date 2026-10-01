@@ -8,10 +8,19 @@ const LOGO = "/manus-storage/sou-eletricista-logo_a1bfc7b7.png";
 const HERO_BACKGROUND = "/manus-storage/site-lightning-background_733076e4.jpeg";
 const SECTION_BACKGROUND = "/manus-storage/electricity-section-background_d153577d.jpg";
 
+function MediaPreview({ url }: { url: string }) {
+  const clean = url.toLowerCase().split("?")[0];
+  if (/\.(mp3|wav|ogg|m4a|aac)(_|$)/.test(clean)) return <div className="flex aspect-video items-center justify-center bg-[#0b45ad] p-6"><audio className="w-full" controls src={url} /></div>;
+  if (/\.(png|jpe?g|gif|webp|svg)(_|$)/.test(clean)) return <div className="aspect-video bg-slate-100"><img className="h-full w-full object-cover" src={url} alt="Conteúdo da Vitrine" /></div>;
+  if (/\.(pdf)(_|$)/.test(clean)) return <div className="flex aspect-video items-center justify-center bg-[#0b45ad] p-6"><a className="rounded-full bg-[#ffd326] px-5 py-3 font-extrabold text-[#082d70]" href={url} target="_blank" rel="noreferrer">Abrir PDF</a></div>;
+  return <div className="aspect-video bg-black"><video className="h-full w-full object-cover" controls preload="metadata" src={url} /></div>;
+}
+
 export default function Home() {
   const { theme, toggleTheme } = useTheme();
   const { data: courses } = trpc.public.courses.useQuery();
   const { data: content } = trpc.public.content.useQuery();
+  const { data: pricing } = trpc.public.pricing.useQuery();
   const course = courses?.[0];
   const updates = content?.filter(item => item.kind === "update").slice(0, 3) ?? [];
   const videos = content?.filter(item => item.kind !== "update").slice(0, 2) ?? [];
@@ -34,7 +43,7 @@ export default function Home() {
               <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#e7ad00]">Aprender • Praticar • Conquistar</p>
             </div>
           </Link>
-          <nav className="hidden items-center gap-2 lg:flex">
+          <nav className="hidden min-w-0 flex-1 items-center justify-end gap-1 xl:gap-2 lg:flex">
             <a href="#curso" className="home-nav-link">O curso</a>
             <a href="#vitrine" className="home-nav-link">Vitrine</a>
             <a href="#como-funciona" className="home-nav-link">Como funciona</a>
@@ -42,7 +51,7 @@ export default function Home() {
             <Link href="/diretor" className="home-nav-link">Sobre o Diretor</Link>
             <Link href="/contactos" className="home-nav-link">Contactos</Link>
           </nav>
-          <div className="flex max-w-[calc(100vw-5rem)] items-center gap-2 overflow-x-auto pb-1">
+          <div className="flex min-w-0 max-w-[calc(100vw-5rem)] shrink-0 items-center gap-2 overflow-x-auto pb-1">
             <a href="#vitrine" className="home-nav-link home-nav-mobile lg:hidden">Vitrine</a>
             <Link href="/aluno" className="home-nav-link home-nav-mobile lg:hidden">Aluno</Link>
             <Link href="/diretor" className="home-nav-link home-nav-mobile lg:hidden">Diretor</Link>
@@ -50,7 +59,7 @@ export default function Home() {
             <button onClick={toggleTheme} aria-label="Alternar tema" className="rounded-full border border-blue-100 p-2.5 transition hover:bg-blue-50 dark:border-white/15 dark:hover:bg-white/10">
               {theme === "dark" ? <Sun className="h-4 w-4 text-[#ffd326]" /> : <Moon className="h-4 w-4 text-[#0b45ad]" />}
             </button>
-            <Link href="/inscricao" className="hidden rounded-full bg-[#f3bd08] px-5 py-3 text-sm font-extrabold text-[#0b2c68] shadow-lg shadow-yellow-200 transition hover:-translate-y-0.5 hover:bg-[#ffd43b] sm:inline-flex">Começar agora</Link>
+            <Link href="/inscricao" className="hidden shrink-0 rounded-full bg-[#f3bd08] px-4 py-3 text-sm font-extrabold text-[#0b2c68] shadow-lg shadow-yellow-200 transition hover:-translate-y-0.5 hover:bg-[#ffd43b] sm:inline-flex">Começar agora</Link>
           </div>
         </div>
       </header>
@@ -66,9 +75,10 @@ export default function Home() {
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white/75 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-[#0b45ad] dark:border-white/15 dark:bg-white/10 dark:text-[#ffd326]"><span className="h-2 w-2 rounded-full bg-[#f3bd08]" /> Formação profissional a distância</div>
               <h1 className="font-display text-5xl font-black leading-[.98] tracking-tight text-[#082d70] dark:text-white sm:text-6xl lg:text-7xl">A sua energia para <span className="text-[#e0a900]">conquistar</span> novas oportunidades.</h1>
               <p className="mt-7 max-w-xl text-lg leading-8 text-slate-600 dark:text-slate-300">Aprenda eletricidade básica para instalações residenciais em baixa tensão com uma formação prática, acessível e pensada para quem quer evoluir.</p>
-              <div className="mt-9 flex flex-wrap gap-3">
+              <div className="mt-9 flex flex-wrap items-center gap-3">
                 <Link href="/inscricao" className="group inline-flex items-center gap-3 rounded-full bg-[#0b45ad] px-6 py-4 font-extrabold text-white shadow-xl shadow-blue-200 transition hover:-translate-y-1 hover:bg-[#083a93] dark:shadow-blue-950/30">Começar o curso agora <ArrowRight className="h-5 w-5 transition group-hover:translate-x-1" /></Link>
                 <button onClick={shareCenter} className="inline-flex items-center gap-3 rounded-full border border-[#0b45ad]/20 bg-white px-6 py-4 font-bold text-[#0b45ad] transition hover:bg-blue-50 dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"><Share2 className="h-5 w-5" /> Partilhar centro</button>
+                <span className="rounded-full border border-[#e0a900]/30 bg-[#fff8d8] px-4 py-2 text-sm font-black text-[#7a5700] dark:bg-white/10 dark:text-[#ffd326]">{pricing?.label ?? "4.000 Kz / 4 € promocional"}</span>
               </div>
               <div className="mt-12 grid max-w-lg grid-cols-3 gap-5 border-t border-blue-200/70 pt-6 dark:border-white/15">
                 <div><p className="font-display text-2xl font-black text-[#0b45ad] dark:text-white">12h</p><p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">Formação guiada</p></div>
@@ -116,7 +126,7 @@ export default function Home() {
           </div>
         </section>
 
-        {(videos.length > 0 || updates.length > 0) && <section id="vitrine" className="border-t border-blue-100 bg-white py-24 dark:border-white/10 dark:bg-white/[.03]"><div className="container"><p className="eyebrow">Vitrine</p><h2 className="section-title mt-4">Novidades do centro.</h2><div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">{[...videos, ...updates].slice(0, 3).map(item => <article key={item.id} className="overflow-hidden rounded-3xl border border-blue-100 bg-[#f8fbff] dark:border-white/10 dark:bg-white/5">{item.mediaUrl ? <div className="aspect-video bg-black"><video className="h-full w-full object-cover" controls src={item.mediaUrl} /></div> : <div className="flex aspect-video items-center justify-center bg-[#0b45ad]"><PlayCircle className="h-12 w-12 text-[#ffd326]" /></div>}<div className="p-6"><p className="text-xs font-bold uppercase tracking-widest text-[#e0a900]">{item.kind === "update" ? "Atualização" : "Vídeo"}</p><h3 className="mt-2 font-display text-xl font-extrabold">{item.title}</h3>{item.body && <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.body}</p>}</div></article>)}</div></div></section>}
+        {(videos.length > 0 || updates.length > 0) && <section id="vitrine" className="border-t border-blue-100 bg-white py-24 dark:border-white/10 dark:bg-white/[.03]"><div className="container"><p className="eyebrow">Vitrine</p><h2 className="section-title mt-4">Novidades do centro.</h2><div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">{[...videos, ...updates].slice(0, 3).map(item => <article key={item.id} className="overflow-hidden rounded-3xl border border-blue-100 bg-[#f8fbff] dark:border-white/10 dark:bg-white/5">{item.mediaUrl ? <MediaPreview url={item.mediaUrl} /> : <div className="flex aspect-video items-center justify-center bg-[#0b45ad]"><PlayCircle className="h-12 w-12 text-[#ffd326]" /></div>}<div className="p-6"><p className="text-xs font-bold uppercase tracking-widest text-[#e0a900]">{item.kind === "update" ? "Atualização" : "Vídeo"}</p><h3 className="mt-2 font-display text-xl font-extrabold">{item.title}</h3>{item.body && <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.body}</p>}</div></article>)}</div></div></section>}
       </main>
 
       <footer className="border-t border-blue-100 bg-[#071f51] py-12 text-white dark:border-white/10"><div className="container flex flex-col justify-between gap-8 md:flex-row md:items-end"><div className="flex items-center gap-4"><img src={LOGO} alt="Sou Eletricista" className="h-16 w-16 rounded-full object-cover" /><div><p className="font-display text-xl font-black">Sou Eletricista</p><p className="mt-1 text-sm text-blue-200">Aprender • Praticar • Conquistar</p></div></div><div className="flex flex-wrap gap-5 text-sm font-semibold text-blue-100"><Link href="/aluno">Área do aluno</Link><Link href="/coordenacao">Coordenação</Link><Link href="/contactos">Contactos</Link><a href="mailto:souelectricista@gmail.com">souelectricista@gmail.com</a></div></div></footer>

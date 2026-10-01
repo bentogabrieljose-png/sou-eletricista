@@ -185,3 +185,8 @@
   .certificate-actions { display: none !important; }
   @page { size: A4 portrait; margin: 0; }
 }
+
+@media (min-width: 1024px) and (max-width: 1320px) {
+  .home-nav-link { padding-inline: .68rem; font-size: .78rem; }
+  header .container { gap: .65rem; }
+}

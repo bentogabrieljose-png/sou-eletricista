@@ -4,6 +4,7 @@ import { nanoid } from "nanoid";
 import { InsertUser, applications, certificateReprintRequests, contentItems, courses, examAttempts, materialProgress, messages, notebookPages, notebookVersions, notebooks, studentProgress, users } from "../drizzle/schema";
 import { COURSE_LESSON_URL } from "../shared/course";
 import { CERTIFICATE_CENTER_NAME, CERTIFICATE_DIRECTOR_NAME, CERTIFICATE_DURATION_LABEL, CERTIFICATE_TEMPLATE_VERSION } from "../shared/certificate";
+import { getTrainingPrice } from "../shared/pricing";
 import { ENV } from "./_core/env";
 import { readTtlCache, writeTtlCache, type TtlCacheEntry } from "./cache";
 
@@ -587,4 +588,19 @@ export async function createContent(input: { kind: "welcome_video" | "course_vid
   await db.insert(contentItems).values(input);
   publicContentCache = null;
   return (await db.select().from(contentItems).orderBy(desc(contentItems.createdAt)).limit(1))[0];
+}
+
+export function getCurrentTrainingPrice() {
+  return getTrainingPrice();
+}
+
+export async function uploadContentMedia(input: { fileName: string; contentType: string; data: string }) {
+  const allowed = input.contentType.startsWith("video/") || input.contentType.startsWith("audio/") || input.contentType.startsWith("image/") || input.contentType === "application/pdf";
+  if (!allowed) throw new Error("Formato multimédia não suportado. Use vídeo, áudio, imagem ou PDF.");
+  const raw = input.data.replace(/^data:[^;]+;base64,/, "");
+  const bytes = Buffer.from(raw, "base64");
+  if (bytes.length > 80 * 1024 * 1024) throw new Error("O ficheiro deve ter no máximo 80 MB.");
+  const { storagePut } = await import("./storage");
+  const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-140) || "conteudo-media";
+  return storagePut(`content/${Date.now()}-${safeName}`, bytes, input.contentType);
 }

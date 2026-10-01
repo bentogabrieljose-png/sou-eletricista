@@ -15,8 +15,8 @@ const app = express();
 const server = createServer(app);
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
-app.use(express.json({ limit: "12mb" }));
-app.use(express.urlencoded({ extended: true, limit: "12mb" }));
+app.use(express.json({ limit: "120mb" }));
+app.use(express.urlencoded({ extended: true, limit: "120mb" }));
 app.use((req, res, next) => {
   const startedAt = performance.now();
   res.once("finish", () => recordRequest({ at: Date.now(), path: req.path, status: res.statusCode, durationMs: performance.now() - startedAt }));
