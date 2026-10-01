@@ -86,6 +86,13 @@ export default function Verificar() {
               </div>
             </div>
 
+            <div className="print-hide mt-6 grid gap-4 rounded-[2rem] border border-blue-100 bg-white p-6 dark:border-white/10 dark:bg-white/5 sm:grid-cols-4">
+              <div><p className="text-xs uppercase tracking-wider text-slate-500">Formando</p><p className="mt-1 font-bold">{data.application.fullName}</p></div>
+              <div><p className="text-xs uppercase tracking-wider text-slate-500">Curso</p><p className="mt-1 font-bold">{data.application.courseTitle}</p></div>
+              <div><p className="text-xs uppercase tracking-wider text-slate-500">Início · término</p><p className="mt-1 font-bold">{formatDate(data.progress.startedAt)} · {formatDate(data.progress.completedAt)}</p></div>
+              <div><p className="text-xs uppercase tracking-wider text-slate-500">Percentagem</p><p className="mt-1 font-bold">{data.progress.latestScore ?? 0}%</p></div>
+            </div>
+
             <div className="certificate-actions print-hide mt-6 flex flex-wrap items-center justify-between gap-4">
               <div className="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-300">
                 <CheckCircle2 className="h-5 w-5" /> Certificado autenticado digitalmente
@@ -97,6 +104,12 @@ export default function Verificar() {
                 <button onClick={printCertificate} disabled={!qrCode} className="inline-flex items-center gap-2 rounded-full border border-blue-200 px-6 py-3 font-extrabold text-[#0b45ad] disabled:cursor-wait disabled:opacity-60 dark:border-white/20 dark:text-white" title={qrCode ? "Abrir impressão no navegador" : "A preparar o QR Code…"}>
                   Imprimir no navegador
                 </button>
+                <Link href={`/segunda-via/${data.progress.qrToken}`} className="inline-flex items-center gap-2 rounded-full border border-amber-300 px-6 py-3 font-extrabold text-amber-700 dark:text-amber-200">
+                  Segunda via do certificado
+                </Link>
+                <Link href="/inscricao" className="inline-flex items-center gap-2 rounded-full border border-blue-200 px-6 py-3 font-extrabold text-[#0b45ad] dark:border-white/20 dark:text-white">
+                  Fazer nova inscrição
+                </Link>
               </div>
             </div>
           </>

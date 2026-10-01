@@ -11,6 +11,7 @@ import Aluno from "./pages/Aluno";
 import NotFound from "./pages/NotFound";
 import Verificar from "./pages/Verificar";
 import SobreDiretor from "./pages/SobreDiretor";
+import SegundaVia from "./pages/SegundaVia";
 
 function Router() {
   return <Switch>
@@ -21,6 +22,7 @@ function Router() {
     <Route path="/contactos" component={Contactos} />
     <Route path="/diretor" component={SobreDiretor} />
     <Route path="/validar/:token" component={Verificar} />
+    <Route path="/segunda-via/:token" component={SegundaVia} />
     <Route path="/404" component={NotFound} />
     <Route component={NotFound} />
   </Switch>;

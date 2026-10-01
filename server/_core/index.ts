@@ -7,7 +7,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { createContext } from "./context";
 import { appRouter } from "../routers";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { ensureDefaultCourse, getApplicationByNumber, getCertificateByToken } from "../db";
+import { ensureDefaultCourse, getApplicationByNumber, getCertificateByToken, getCertificateReprintByToken, markCertificateReprintDownloaded, purgeExpiredStudentAccess } from "../db";
 import { recordRequest } from "../metrics";
 import { generateCertificatePdf, generateEnrollmentReceiptPdf } from "../pdf";
 
@@ -51,10 +51,24 @@ app.get("/api/download/receipt/:applicationNumber", async (req, res) => {
     return res.send(pdf);
   } catch (error) { console.error("[PDF] receipt generation failed", error); return res.status(500).json({ error: "Não foi possível gerar o comprovativo." }); }
 });
+app.get("/api/download/reprint/:token", async (req, res) => {
+  try {
+    const item = await getCertificateReprintByToken(req.params.token);
+    if (!item) return res.status(404).json({ error: "Segunda via não encontrada, já descarregada ou ainda não autorizada." });
+    const origin = `${req.protocol}://${req.get("host")}`;
+    const pdf = await generateCertificatePdf({ fullName: item.progress.studentName || "Aluno", courseTitle: item.progress.courseTitle || "Curso", completedAt: item.progress.completedAt, score: item.progress.latestScore, qrToken: item.progress.qrToken || "", validationUrl: `${origin}/validar/${item.progress.qrToken || ""}` });
+    await markCertificateReprintDownloaded(item.request.id);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="segunda-via-certificado-${item.request.id}.pdf"`);
+    res.setHeader("Cache-Control", "private, no-store");
+    return res.send(pdf);
+  } catch (error) { console.error("[PDF] second certificate generation failed", error); return res.status(500).json({ error: "Não foi possível gerar a segunda via." }); }
+});
 app.use("/api/trpc", createExpressMiddleware({ router: appRouter, createContext }));
 
 async function startServer() {
   await ensureDefaultCourse();
+  await purgeExpiredStudentAccess();
   if (process.env.NODE_ENV === "development") await setupVite(app, server);
   else serveStatic(app);
   const port = Number(process.env.PORT || 3000);

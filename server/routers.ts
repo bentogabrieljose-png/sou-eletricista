@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { COURSE_LESSON_URL, EXAM_QUESTIONS, scoreExam } from "../shared/course";
-import { addNotebookPage, authorizeCertificate, buildCertificateFallbackReport, clearNotebookPage, createApplication, createContent, createCourse, createMessage, deleteApplicationPermanently, deleteStudentDataPermanently, ensureCertificatePending, getApplicationByNumber, getCertificateByToken, getNotebook, getStudentByCode, listApplications, listCertificateRequests, listContent, listCourses, listMessages, listMaterialProgress, listNotebookVersions, listIssuedCertificates, markMaterialViewed, restoreNotebookVersion, saveCertificatePreflight, certificatePreflightInput, saveNotebookPage, startCourse, submitExam, updateApplicationStatus, uploadNotebookImage } from "./db";
+import { addNotebookPage, authorizeCertificate, authorizeCertificateReprint, buildCertificateFallbackReport, clearNotebookPage, createApplication, createCertificateReprint, createContent, createCourse, createMessage, deleteApplicationPermanently, deleteStudentDataPermanently, ensureCertificatePending, getApplicationByNumber, getCertificateByToken, getCertificateReprintStatus, getNotebook, getStudentByCode, listApplications, listCertificateRequests, listCertificateReprints, listContent, listCourses, listMessages, listMaterialProgress, listNotebookVersions, listIssuedCertificates, markMaterialViewed, restoreNotebookVersion, saveCertificatePreflight, certificatePreflightInput, saveNotebookPage, startCourse, submitExam, updateApplicationStatus, uploadNotebookImage } from "./db";
 import { invokeLLM } from "./_core/llm";
 import { COOKIE_NAME, COORDINATION_COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -117,10 +117,12 @@ export const appRouter = router({
       if (!student) throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
       return createMessage({ applicationId: student.application.id, fromRole: "student", subject: input.subject, body: input.body });
     }),
+    certificateReprintStatus: publicProcedure.input(z.object({ id: z.number().int().positive(), requesterEmail: z.string().email() })).query(({ input }) => getCertificateReprintStatus(input.id, input.requesterEmail)),
+    requestCertificateReprint: publicProcedure.input(z.object({ qrToken: z.string().min(8), requesterName: z.string().min(3), requesterEmail: z.string().email(), paymentMethod: z.string().min(2), feeAmount: z.number().int().positive(), feeCurrency: z.string().min(2).max(8), proofData: z.string().min(20), proofName: z.string().min(1).max(255), proofType: z.string().optional() })).mutation(({ input }) => createCertificateReprint(input)),
     assistant: publicProcedure.input(z.object({ question: z.string().min(2), history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string() })).default([]) })).mutation(async ({ input }) => {
       const response = await invokeLLM({
         messages: [
-          { role: "system", content: "Você é Sou Eletricista, um assistente didático de eletricidade básica e instalações residenciais de baixa tensão. Responda em português claro, com passos práticos, destaque segurança e nunca incentive trabalho energizado ou improvisações perigosas." },
+          { role: "system", content: "Você é Sou Eletricista. Responda sempre em português claro, curto e objetivo: dê apenas a resposta específica, os passos essenciais e um alerta de segurança quando necessário. Nunca incentive trabalho energizado ou improvisações perigosas." },
           ...input.history.map(message => ({ role: message.role as "user" | "assistant", content: message.content })),
           { role: "user", content: input.question },
         ],
@@ -136,8 +138,10 @@ export const appRouter = router({
     deleteApplicationPermanently: adminProcedure.input(z.object({ applicationNumber: z.string() })).mutation(({ input }) => deleteApplicationPermanently(input.applicationNumber)),
     certificateRequests: adminProcedure.query(() => listCertificateRequests()),
     issuedCertificates: adminProcedure.query(() => listIssuedCertificates()),
+    certificateReprints: adminProcedure.query(() => listCertificateReprints()),
     deleteStudentDataPermanently: adminProcedure.input(z.object({ applicationId: z.number().int().positive() })).mutation(({ input }) => deleteStudentDataPermanently(input.applicationId)),
     authorizeCertificate: adminProcedure.input(z.object({ applicationId: z.number(), approved: z.boolean() })).mutation(({ input }) => authorizeCertificate(input.applicationId, input.approved)),
+    authorizeCertificateReprint: adminProcedure.input(z.object({ id: z.number().int().positive(), approved: z.boolean() })).mutation(({ input }) => authorizeCertificateReprint(input.id, input.approved)),
     messages: adminProcedure.query(() => listMessages()),
     reply: adminProcedure.input(z.object({ applicationId: z.number(), subject: z.string().min(2), body: z.string().min(2) })).mutation(({ input }) => createMessage({ applicationId: input.applicationId, fromRole: "coordination", subject: input.subject, body: input.body })),
     content: adminProcedure.query(() => listContent(false)),

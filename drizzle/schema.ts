@@ -54,6 +54,7 @@ export const studentProgress = mysqlTable("student_progress", {
   courseTitle: varchar("courseTitle", { length: 255 }),
   startedAt: timestamp("startedAt"),
   accessUnlockAt: timestamp("accessUnlockAt"),
+  accessExpiresAt: timestamp("accessExpiresAt"),
   completedAt: timestamp("completedAt"),
   latestScore: int("latestScore"),
   examStatus: mysqlEnum("examStatus", ["not_started", "available", "passed", "retry"]).default("not_started").notNull(),
@@ -67,6 +68,25 @@ export const studentProgress = mysqlTable("student_progress", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => ({ certificateUpdatedAtIdx: index("student_progress_certificate_updated_at_idx").on(table.certificateStatus, table.updatedAt) }));
+
+export const certificateReprintRequests = mysqlTable("certificate_reprint_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  progressId: int("progressId").notNull(),
+  requesterName: varchar("requesterName", { length: 255 }).notNull(),
+  requesterEmail: varchar("requesterEmail", { length: 320 }).notNull(),
+  paymentMethod: varchar("paymentMethod", { length: 120 }).notNull(),
+  feeAmount: int("feeAmount").default(2000).notNull(),
+  feeCurrency: varchar("feeCurrency", { length: 8 }).default("Kz").notNull(),
+  proofUrl: varchar("proofUrl", { length: 500 }),
+  proofKey: varchar("proofKey", { length: 500 }),
+  proofName: varchar("proofName", { length: 255 }),
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  downloadToken: varchar("downloadToken", { length: 80 }).unique(),
+  downloadedAt: timestamp("downloadedAt"),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => ({ statusCreatedAtIdx: index("certificate_reprint_status_created_at_idx").on(table.status, table.createdAt), progressIdx: index("certificate_reprint_progress_idx").on(table.progressId) }));
 
 
 export const materialProgress = mysqlTable("material_progress", {

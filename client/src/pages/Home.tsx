@@ -1,11 +1,11 @@
 import { Link } from "wouter";
-import { ArrowRight, BookOpen, CheckCircle2, Clock3, Moon, PlayCircle, Share2, ShieldCheck, Sun, Users } from "lucide-react";
+import { ArrowRight, BookOpen, CheckCircle2, Clock3, Lightbulb, Moon, PlayCircle, PlugZap, Share2, ShieldCheck, Sun, Users, Zap } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import { LoadingBar } from "@/components/PageLoader";
 
 const LOGO = "/manus-storage/sou-eletricista-logo_a1bfc7b7.png";
-const HERO_BACKGROUND = "/manus-storage/electricity-hero-background_79d57508.jpg";
+const HERO_BACKGROUND = "/manus-storage/site-lightning-background_733076e4.jpeg";
 const SECTION_BACKGROUND = "/manus-storage/electricity-section-background_d153577d.jpg";
 
 export default function Home() {
@@ -24,7 +24,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#f8fbff] text-[#12213a] dark:bg-[#07111f] dark:text-white">
+    <div className="site-lightning-bg min-h-screen overflow-hidden bg-[#f8fbff] text-[#12213a] dark:bg-[#07111f] dark:text-white">
       <header className="sticky top-0 z-40 border-b border-blue-100/80 bg-white/90 backdrop-blur dark:border-white/10 dark:bg-[#07111f]/90">
         <div className="container flex h-20 items-center justify-between gap-5">
           <Link href="/" className="flex shrink-0 items-center gap-3">
@@ -42,7 +42,7 @@ export default function Home() {
             <Link href="/diretor" className="home-nav-link">Sobre o Diretor</Link>
             <Link href="/contactos" className="home-nav-link">Contactos</Link>
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex max-w-[calc(100vw-5rem)] items-center gap-2 overflow-x-auto pb-1">
             <a href="#vitrine" className="home-nav-link home-nav-mobile lg:hidden">Vitrine</a>
             <Link href="/aluno" className="home-nav-link home-nav-mobile lg:hidden">Aluno</Link>
             <Link href="/diretor" className="home-nav-link home-nav-mobile lg:hidden">Diretor</Link>
@@ -60,7 +60,8 @@ export default function Home() {
         <section className="relative isolate">
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_78%_14%,rgba(243,189,8,.25),transparent_24%),linear-gradient(120deg,#eaf3ff_0%,#f8fbff_55%,#fff9e5_100%)] dark:bg-[radial-gradient(circle_at_78%_14%,rgba(243,189,8,.16),transparent_24%),linear-gradient(120deg,#0d2445_0%,#07111f_60%,#17264b_100%)]" />
           <div className="pointer-events-none absolute inset-0 -z-10 bg-cover bg-center opacity-20 mix-blend-multiply dark:opacity-25 dark:mix-blend-screen" style={{ backgroundImage: `url(${HERO_BACKGROUND})` }} />
-          <div className="container grid min-h-[680px] items-center gap-12 py-20 lg:grid-cols-[1.05fr_.95fr] lg:py-24">
+          <div className="container relative grid min-h-[680px] items-center gap-12 py-20 lg:grid-cols-[1.05fr_.95fr] lg:py-24">
+            <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true"><Lightbulb className="floating-energy-icon left-[8%] top-[18%] h-10 w-10 text-[#f3bd08]" /><PlugZap className="floating-energy-icon right-[7%] top-[24%] h-9 w-9 text-[#0b45ad] dark:text-[#ffd326]" /><Zap className="floating-energy-icon bottom-[13%] left-[46%] h-8 w-8 text-[#f3bd08]" /></div>
             <div className="max-w-2xl">
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white/75 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-[#0b45ad] dark:border-white/15 dark:bg-white/10 dark:text-[#ffd326]"><span className="h-2 w-2 rounded-full bg-[#f3bd08]" /> Formação profissional a distância</div>
               <h1 className="font-display text-5xl font-black leading-[.98] tracking-tight text-[#082d70] dark:text-white sm:text-6xl lg:text-7xl">A sua energia para <span className="text-[#e0a900]">conquistar</span> novas oportunidades.</h1>

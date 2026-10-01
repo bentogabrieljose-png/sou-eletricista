@@ -134,6 +134,9 @@ export default function Aluno() {
     const minutes = Math.floor((remaining % 3600000) / 60000);
     return `${hours}h ${minutes.toString().padStart(2, "0")}min`;
   }, [remaining]);
+  const accessExpiresAt = student?.progress?.accessExpiresAt
+    ? new Date(student.progress.accessExpiresAt)
+    : null;
   useEffect(() => {
     if (!unlockAt || isUnlocked) return;
     const timer = window.setInterval(() => studentQuery.refetch(), 60000);
@@ -315,6 +318,11 @@ export default function Aluno() {
           <p className="mt-5 text-sm font-bold text-[#0b45ad] dark:text-[#ffd326]">
             Curso: {student.application.courseTitle}
           </p>
+          {accessExpiresAt && (
+            <p className="mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
+              Acesso à sala virtual até {accessExpiresAt.toLocaleDateString("pt-PT")}. Depois dessa data, os dados operacionais serão eliminados e ficará disponível apenas a consulta do certificado por QR Code.
+            </p>
+          )}
         </div>
         <div className="grid gap-5 md:grid-cols-3">
           <div className="rounded-3xl bg-[#0b45ad] p-6 text-white shadow-lg">

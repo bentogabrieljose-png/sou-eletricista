@@ -1,7 +1,7 @@
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull, lt, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { nanoid } from "nanoid";
-import { InsertUser, applications, contentItems, courses, examAttempts, materialProgress, messages, notebookPages, notebookVersions, notebooks, studentProgress, users } from "../drizzle/schema";
+import { InsertUser, applications, certificateReprintRequests, contentItems, courses, examAttempts, materialProgress, messages, notebookPages, notebookVersions, notebooks, studentProgress, users } from "../drizzle/schema";
 import { COURSE_LESSON_URL } from "../shared/course";
 import { CERTIFICATE_CENTER_NAME, CERTIFICATE_DIRECTOR_NAME, CERTIFICATE_DURATION_LABEL, CERTIFICATE_TEMPLATE_VERSION } from "../shared/certificate";
 import { ENV } from "./_core/env";
@@ -153,8 +153,9 @@ export async function updateApplicationStatus(applicationNumber: string, status:
     if (application) {
       const existingProgress = (await db.select({ id: studentProgress.id }).from(studentProgress).where(eq(studentProgress.applicationId, application.id)).limit(1))[0];
       const snapshot = { studentName: application.fullName, studentEmail: application.email, studentNif: application.nif, courseTitle: application.courseTitle };
-      if (existingProgress) await db.update(studentProgress).set(snapshot).where(eq(studentProgress.id, existingProgress.id));
-      else await db.insert(studentProgress).values({ applicationId: application.id, ...snapshot });
+      const accessExpiresAt = new Date((application.approvedAt ?? new Date()).getTime() + 10 * 24 * 60 * 60 * 1000);
+      if (existingProgress) await db.update(studentProgress).set({ ...snapshot, accessExpiresAt }).where(eq(studentProgress.id, existingProgress.id));
+      else await db.insert(studentProgress).values({ applicationId: application.id, ...snapshot, accessExpiresAt });
     }
   }
   return getApplicationByNumber(applicationNumber);
@@ -205,6 +206,7 @@ export function certificateArchiveUpdate() {
     accessUnlockAt: null,
     examStatus: "not_started" as const,
     attempts: 0,
+    accessExpiresAt: null,
   };
 }
 
@@ -239,8 +241,47 @@ export async function getStudentByCode(accessCode: string) {
   const normalizedCode = accessCode.trim().toUpperCase();
   const application = (await db.select().from(applications).where(and(or(eq(applications.accessCode, normalizedCode), eq(applications.applicationNumber, normalizedCode)), eq(applications.status, "approved"))).limit(1))[0];
   if (!application) return undefined;
-  const progress = (await db.select().from(studentProgress).where(eq(studentProgress.applicationId, application.id)).limit(1))[0];
+  let progress = (await db.select().from(studentProgress).where(eq(studentProgress.applicationId, application.id)).limit(1))[0];
+  if (progress && !progress.accessExpiresAt) {
+    const accessExpiresAt = new Date((application.approvedAt ?? new Date()).getTime() + 10 * 24 * 60 * 60 * 1000);
+    await db.update(studentProgress).set({ accessExpiresAt }).where(eq(studentProgress.id, progress.id));
+    progress = { ...progress, accessExpiresAt };
+  }
+  if (progress?.accessExpiresAt && progress.accessExpiresAt.getTime() <= Date.now()) {
+    await expireStudentAccess(application.id, progress.id);
+    return undefined;
+  }
   return { application, progress };
+}
+
+export async function expireStudentAccess(applicationId: number, progressId?: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return db.transaction(async tx => {
+    const progress = (await tx.select().from(studentProgress).where(progressId ? eq(studentProgress.id, progressId) : eq(studentProgress.applicationId, applicationId)).limit(1))[0];
+    if (!progress) return { success: false as const, reason: "not_found" as const };
+    const notebook = (await tx.select({ id: notebooks.id }).from(notebooks).where(eq(notebooks.applicationId, applicationId)).limit(1))[0];
+    if (notebook) {
+      const pages = await tx.select({ id: notebookPages.id }).from(notebookPages).where(eq(notebookPages.notebookId, notebook.id));
+      for (const page of pages) await tx.delete(notebookVersions).where(eq(notebookVersions.pageId, page.id));
+      await tx.delete(notebookPages).where(eq(notebookPages.notebookId, notebook.id));
+      await tx.delete(notebooks).where(eq(notebooks.id, notebook.id));
+    }
+    await tx.delete(materialProgress).where(eq(materialProgress.applicationId, applicationId));
+    await tx.delete(examAttempts).where(eq(examAttempts.applicationId, applicationId));
+    await tx.delete(messages).where(eq(messages.applicationId, applicationId));
+    await tx.delete(applications).where(eq(applications.id, applicationId));
+    await tx.update(studentProgress).set(certificateArchiveUpdate()).where(eq(studentProgress.id, progress.id));
+    return { success: true as const, qrToken: progress.qrToken };
+  });
+}
+
+export async function purgeExpiredStudentAccess() {
+  const db = await getDb();
+  if (!db) return 0;
+  const expired = await db.select({ applicationId: studentProgress.applicationId, progressId: studentProgress.id }).from(studentProgress).where(and(isNotNull(studentProgress.accessExpiresAt), lt(studentProgress.accessExpiresAt, new Date()), eq(studentProgress.certificateStatus, "approved")));
+  for (const row of expired) await expireStudentAccess(row.applicationId, row.progressId);
+  return expired.length;
 }
 
 export async function listMaterialProgress(accessCode: string) {
@@ -463,7 +504,58 @@ export async function getCertificateByToken(qrToken: string) {
   if (!db) return undefined;
   const row = (await db.select({ progress: studentProgress, application: applications }).from(studentProgress).leftJoin(applications, eq(studentProgress.applicationId, applications.id)).where(and(eq(studentProgress.qrToken, qrToken), eq(studentProgress.certificateStatus, "approved"))).limit(1))[0];
   if (!row) return undefined;
-  return { progress: row.progress, application: row.application ?? { id: row.progress.applicationId, fullName: row.progress.studentName || "Aluno", email: row.progress.studentEmail, nif: row.progress.studentNif, courseTitle: row.progress.courseTitle || "Curso", status: "approved" as const } };
+  return {
+    progress: { id: row.progress.id, qrToken: row.progress.qrToken, latestScore: row.progress.latestScore, startedAt: row.progress.startedAt, completedAt: row.progress.completedAt, certificateNumber: row.progress.certificateNumber },
+    application: { id: row.progress.applicationId, fullName: row.application?.fullName || row.progress.studentName || "Aluno", courseTitle: row.application?.courseTitle || row.progress.courseTitle || "Curso", approvedAt: row.application?.approvedAt ?? null },
+  };
+}
+
+export async function createCertificateReprint(input: { qrToken: string; requesterName: string; requesterEmail: string; paymentMethod: string; feeAmount: number; feeCurrency: string; proofData: string; proofName: string; proofType?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const row = (await db.select().from(studentProgress).where(and(eq(studentProgress.qrToken, input.qrToken), eq(studentProgress.certificateStatus, "approved"))).limit(1))[0];
+  if (!row) return undefined;
+  const existing = (await db.select().from(certificateReprintRequests).where(and(eq(certificateReprintRequests.progressId, row.id), or(eq(certificateReprintRequests.status, "pending"), eq(certificateReprintRequests.status, "approved")))).limit(1))[0];
+  if (existing) return existing;
+  const { storagePut } = await import("./storage");
+  const raw = input.proofData.replace(/^data:[^;]+;base64,/, "");
+  const stored = await storagePut(`certificate-reprints/${row.id}/${input.proofName}`, Buffer.from(raw, "base64"), input.proofType || "application/octet-stream");
+  await db.insert(certificateReprintRequests).values({ progressId: row.id, requesterName: input.requesterName, requesterEmail: input.requesterEmail, paymentMethod: input.paymentMethod, feeAmount: input.feeAmount, feeCurrency: input.feeCurrency, proofUrl: stored.url, proofKey: stored.key, proofName: input.proofName });
+  return (await db.select().from(certificateReprintRequests).where(eq(certificateReprintRequests.progressId, row.id)).orderBy(desc(certificateReprintRequests.createdAt)).limit(1))[0];
+}
+
+export async function listCertificateReprints() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ request: certificateReprintRequests, progress: studentProgress }).from(certificateReprintRequests).innerJoin(studentProgress, eq(certificateReprintRequests.progressId, studentProgress.id)).where(eq(certificateReprintRequests.status, "pending")).orderBy(desc(certificateReprintRequests.createdAt));
+}
+
+export async function authorizeCertificateReprint(id: number, approved: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const downloadToken = approved ? nanoid(24) : null;
+  await db.update(certificateReprintRequests).set({ status: approved ? "approved" : "rejected", downloadToken, reviewedAt: new Date() }).where(eq(certificateReprintRequests.id, id));
+  return { success: true as const, downloadToken };
+}
+
+export async function getCertificateReprintByToken(downloadToken: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select({ request: certificateReprintRequests, progress: studentProgress }).from(certificateReprintRequests).innerJoin(studentProgress, eq(certificateReprintRequests.progressId, studentProgress.id)).where(and(eq(certificateReprintRequests.downloadToken, downloadToken), eq(certificateReprintRequests.status, "approved"), isNull(certificateReprintRequests.downloadedAt))).limit(1))[0];
+}
+
+export async function markCertificateReprintDownloaded(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(certificateReprintRequests).set({ downloadedAt: new Date() }).where(and(eq(certificateReprintRequests.id, id), isNull(certificateReprintRequests.downloadedAt)));
+}
+
+export async function getCertificateReprintStatus(id: number, requesterEmail: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const request = (await db.select({ id: certificateReprintRequests.id, status: certificateReprintRequests.status, downloadToken: certificateReprintRequests.downloadToken, downloadedAt: certificateReprintRequests.downloadedAt }).from(certificateReprintRequests).where(and(eq(certificateReprintRequests.id, id), eq(certificateReprintRequests.requesterEmail, requesterEmail))).limit(1))[0];
+  if (!request) return undefined;
+  return { id: request.id, status: request.status, downloadToken: request.status === "approved" ? request.downloadToken : null, downloadedAt: request.downloadedAt };
 }
 
 export async function listMessages(applicationId?: number) {

@@ -8,6 +8,7 @@ describe("permanent student cleanup", () => {
       studentNif: null,
       startedAt: null,
       accessUnlockAt: null,
+      accessExpiresAt: null,
       examStatus: "not_started",
       attempts: 0,
     });
