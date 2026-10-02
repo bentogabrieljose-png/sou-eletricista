@@ -6,6 +6,7 @@ import {
   CERTIFICATE_DURATION_LABEL,
   CERTIFICATE_TEMPLATE_ASSET,
   CERTIFICATE_TEMPLATE_VERSION,
+  formatCertificateRegistration,
 } from "../shared/certificate";
 import { buildCertificateFallbackReport, certificatePreflightInput } from "./db";
 
@@ -29,5 +30,10 @@ describe("certificate model", () => {
     const report = buildCertificateFallbackReport({ application: { fullName: "Ana Silva", courseTitle: "Electricidade de Construção Civil" } }, 100);
     expect(report.conforming).toBe(true);
     expect(report.issues).toEqual([]);
+  });
+
+  it("formats a unique sequential registration number", () => {
+    expect(formatCertificateRegistration(42)).toMatch(/^SE-REG-\d{4}-000042$/);
+    expect(formatCertificateRegistration(42, "SE-CERT-2026-00042")).toBe("SE-REG-2026-00042");
   });
 });

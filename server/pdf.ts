@@ -1,7 +1,7 @@
 import { PDFDocument, StandardFonts, degrees, rgb } from "pdf-lib";
 import QRCode from "qrcode";
 import { storageGetSignedUrl } from "./storage";
-import { CERTIFICATE_CENTER_NAME, CERTIFICATE_DIRECTOR_NAME, CERTIFICATE_DURATION_LABEL, CERTIFICATE_TEMPLATE_ASSET, CERTIFICATE_VERIFICATION_SITE } from "../shared/certificate";
+import { CERTIFICATE_CENTER_NAME, CERTIFICATE_DIRECTOR_NAME, CERTIFICATE_DURATION_LABEL, CERTIFICATE_TEMPLATE_ASSET, CERTIFICATE_VERIFICATION_SITE, formatCertificateRegistration } from "../shared/certificate";
 
 const A4 = { width: 595.28, height: 841.89 };
 const BLUE = rgb(0.04, 0.22, 0.55);
@@ -40,11 +40,12 @@ function wrapLines(text: string, font: { widthOfTextAtSize: (value: string, size
   return lines.slice(0, 2);
 }
 
-export async function generateCertificatePdf(input: { fullName: string; courseTitle: string; completedAt?: Date | string | null; score?: number | null; qrToken: string; validationUrl: string; isBestStudent?: boolean }) {
+export async function generateCertificatePdf(input: { fullName: string; courseTitle: string; completedAt?: Date | string | null; score?: number | null; qrToken: string; validationUrl: string; certificateNumber?: string | null; applicationId?: number | null; isBestStudent?: boolean }) {
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([A4.width, A4.height]);
   const font = await pdf.embedFont(StandardFonts.HelveticaBold);
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
+  const signature = await pdf.embedFont(StandardFonts.TimesRomanItalic);
   const blue = rgb(0.03, 0.20, 0.55);
   const navy = rgb(0.02, 0.10, 0.32);
   const gold = rgb(0.93, 0.70, 0.03);
@@ -96,9 +97,13 @@ export async function generateCertificatePdf(input: { fullName: string; courseTi
   page.drawText(`Código: ${input.qrToken}`, { x: 158, y: 134, size: 8, font: regular, color: navy });
   page.drawText("Verifique a autenticidade em:", { x: 158, y: 116, size: 8, font: regular, color: blue });
   page.drawText(CERTIFICATE_VERIFICATION_SITE, { x: 158, y: 101, size: 8, font, color: blue });
-  page.drawText(CERTIFICATE_DIRECTOR_NAME, { x: 370, y: 128, size: 10, font: regular, color: blue });
-  page.drawLine({ start: { x: 355, y: 119 }, end: { x: 535, y: 119 }, thickness: .8, color: blue });
-  page.drawText(`Direção · ${CERTIFICATE_CENTER_NAME}`, { x: 389, y: 105, size: 7, font, color: blue });
+  const registration = formatCertificateRegistration(input.applicationId, input.certificateNumber);
+  page.drawEllipse({ x: 365, y: 111, xScale: 12, yScale: 12, color: teal, borderColor: gold, borderWidth: 1.2 });
+  page.drawText("DIGITAL", { x: 357, y: 109, size: 4.5, font, color: rgb(1, 1, 1) });
+  page.drawText(CERTIFICATE_DIRECTOR_NAME, { x: 391, y: 142, size: 14, font: signature, color: navy });
+  page.drawLine({ start: { x: 390, y: 119 }, end: { x: 535, y: 119 }, thickness: 1, color: gold });
+  page.drawText("Assinatura digital da Direção", { x: 391, y: 105, size: 7, font, color: blue });
+  page.drawText(`Registo nº ${registration}`, { x: 391, y: 91, size: 7.5, font, color: navy });
   if (input.isBestStudent || input.score === 100) {
     page.drawRectangle({ x: 500, y: 756, width: 12, height: 35, color: rgb(.82, .08, .12), rotate: degrees(-10) });
     page.drawRectangle({ x: 524, y: 756, width: 12, height: 35, color: rgb(.98, .76, .08), rotate: degrees(10) });

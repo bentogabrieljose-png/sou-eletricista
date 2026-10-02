@@ -181,7 +181,8 @@
   .certificate-validation strong, .certificate-validation span { display: block; font-size: clamp(.34rem, 1.15vw, .54rem); line-height: 1.55; }
   .certificate-signature { min-width: 35%; color: #083f98; text-align: center; }
   .certificate-signature span { display: block; font-family: 'Brush Script MT', 'Segoe Script', cursive; font-size: clamp(.62rem, 2.2vw, 1.1rem); font-style: italic; white-space: nowrap; }
-  .certificate-signature small { display: block; margin-top: .2rem; border-top: 1px solid #173f8c; padding-top: .2rem; font-size: clamp(.3rem, .9vw, .48rem); font-weight: 700; }
+  .certificate-signature small { display: block; margin-top: .2rem; border-top: 1px solid #e8b207; padding-top: .2rem; font-size: clamp(.3rem, .9vw, .48rem); font-weight: 700; }
+  .certificate-signature b { display: block; margin-top: .25rem; color: #092b72; font-size: clamp(.3rem, .9vw, .48rem); letter-spacing: .02em; }
   .certificate-bottom-band { position: absolute; z-index: 1; bottom: 0; left: 0; width: 100%; padding: 1.1rem .5rem; background: linear-gradient(90deg, #061b52, #0b45ad 50%, #061b52); color: #ffd326; text-align: center; font-size: clamp(.38rem, 1.3vw, .62rem); font-weight: 900; letter-spacing: .05em; }
   .certificate-best-student-badge { position: absolute; z-index: 3; top: 3.2%; right: 6%; display: flex; width: 18%; flex-direction: column; align-items: center; text-align: center; filter: drop-shadow(0 5px 5px rgba(72, 35, 11, .28)); }
   .medal-ribbon { position: absolute; top: 0; width: 25%; height: 42%; clip-path: polygon(0 0, 100% 0, 82% 100%, 50% 82%, 18% 100%); }
