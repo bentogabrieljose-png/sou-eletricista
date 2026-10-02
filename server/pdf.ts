@@ -48,10 +48,17 @@ export async function generateCertificatePdf(input: { fullName: string; courseTi
   const blue = rgb(0.03, 0.20, 0.55);
   const navy = rgb(0.02, 0.10, 0.32);
   const gold = rgb(0.93, 0.70, 0.03);
+  const teal = rgb(0.02, 0.48, 0.55);
+  const bronze = rgb(0.62, 0.30, 0.10);
+  const bronzeLight = rgb(0.86, 0.56, 0.22);
   const pale = rgb(0.97, 0.985, 1);
   page.drawRectangle({ x: 0, y: 0, width: A4.width, height: A4.height, color: pale });
+  page.drawRectangle({ x: 0, y: 0, width: 12, height: A4.height, color: teal });
+  page.drawRectangle({ x: A4.width - 12, y: 0, width: 12, height: A4.height, color: teal });
   page.drawRectangle({ x: 14, y: 14, width: A4.width - 28, height: A4.height - 28, borderColor: gold, borderWidth: 3 });
   page.drawRectangle({ x: 24, y: 24, width: A4.width - 48, height: A4.height - 48, borderColor: blue, borderWidth: 1 });
+  page.drawLine({ start: { x: 42, y: 670 }, end: { x: 553, y: 670 }, thickness: 1.2, color: teal, opacity: .35 });
+  page.drawLine({ start: { x: 42, y: 186 }, end: { x: 553, y: 186 }, thickness: 1.2, color: teal, opacity: .35 });
   page.drawRectangle({ x: 0, y: 0, width: A4.width, height: 54, color: navy });
   page.drawRectangle({ x: 0, y: A4.height - 16, width: A4.width, height: 16, color: gold });
   const logo = await pdf.embedPng(await logoPng());
@@ -93,9 +100,13 @@ export async function generateCertificatePdf(input: { fullName: string; courseTi
   page.drawLine({ start: { x: 355, y: 119 }, end: { x: 535, y: 119 }, thickness: .8, color: blue });
   page.drawText(`Direção · ${CERTIFICATE_CENTER_NAME}`, { x: 389, y: 105, size: 7, font, color: blue });
   if (input.isBestStudent || input.score === 100) {
-    page.drawEllipse({ x: 518, y: 706, xScale: 25, yScale: 25, color: rgb(.63, .32, .12), borderColor: gold, borderWidth: 2 });
-    page.drawText("100%", { x: 507, y: 709, size: 7, font, color: rgb(1, .95, .82) });
-    page.drawText("MELHOR ALUNO", { x: 486, y: 675, size: 6.5, font, color: rgb(.63, .32, .12) });
+    page.drawRectangle({ x: 500, y: 756, width: 12, height: 35, color: rgb(.82, .08, .12), rotate: degrees(-10) });
+    page.drawRectangle({ x: 524, y: 756, width: 12, height: 35, color: rgb(.98, .76, .08), rotate: degrees(10) });
+    page.drawEllipse({ x: 518, y: 731, xScale: 31, yScale: 31, color: bronze, borderColor: gold, borderWidth: 2.5 });
+    page.drawEllipse({ x: 518, y: 731, xScale: 24, yScale: 24, color: bronzeLight, borderColor: rgb(.45, .20, .06), borderWidth: 1 });
+    page.drawText("TOP", { x: 507, y: 734, size: 9, font, color: rgb(1, .92, .45) });
+    page.drawText("100%", { x: 505, y: 717, size: 7, font, color: rgb(1, .98, .88) });
+    page.drawText("MELHOR ALUNO", { x: 479, y: 686, size: 7, font, color: bronze });
   }
   page.drawText("FORMAÇÃO DE QUALIDADE · ELETRICIDADE É FUTURO", { x: 125, y: 31, size: 8, font, color: rgb(1, .84, .15) });
   return Buffer.from(await pdf.save());

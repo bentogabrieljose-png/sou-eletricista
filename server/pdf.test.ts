@@ -7,9 +7,10 @@ describe("server PDF downloads", () => {
       fullName: "Aluno de Teste",
       courseTitle: "Eletricidade Básica para Instalações Residenciais em Baixa Tensão",
       completedAt: new Date("2026-09-26T00:00:00Z"),
-      score: 86,
+      score: 100,
       qrToken: "TEST-QR-TOKEN",
       validationUrl: "https://example.com/validar/TEST-QR-TOKEN",
+      isBestStudent: true,
     });
     expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
     expect(pdf.length).toBeGreaterThan(5000);
