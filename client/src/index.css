@@ -245,3 +245,35 @@ body { letter-spacing: .005em; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+/* Purple professional surfaces outside the white header. */
+#curso {
+  background: linear-gradient(145deg, rgba(248, 243, 255, .96), rgba(239, 230, 255, .92));
+  border-top: 1px solid rgba(109, 40, 217, .12);
+  border-bottom: 1px solid rgba(109, 40, 217, .12);
+}
+#curso .section-title { color: #3b1b67; }
+#curso .eyebrow { color: #6d28d9; }
+#curso > .container > .grid > p { color: #4c3b67; }
+#curso .rounded-3xl { border-color: rgba(109, 40, 217, .18); box-shadow: 0 12px 30px rgba(76, 29, 149, .09); }
+#curso .rounded-3xl:hover { border-color: rgba(109, 40, 217, .38); box-shadow: 0 18px 36px rgba(76, 29, 149, .16); }
+#curso .rounded-3xl h3 { color: #3b1b67; }
+#curso .rounded-3xl p { color: #5c4a75; }
+#curso .rounded-3xl svg { color: #7c3aed; }
+#como-funciona {
+  background-image: linear-gradient(120deg, rgba(59, 27, 103, .96), rgba(91, 33, 182, .93) 52%, rgba(76, 29, 149, .96)), url('/manus-storage/electricity-section-background_d153577d.jpg') !important;
+}
+#vitrine {
+  background: linear-gradient(145deg, #fbf8ff, #f1eaff) !important;
+  border-top-color: rgba(109, 40, 217, .18) !important;
+}
+#vitrine .section-title, #vitrine h3 { color: #3b1b67; }
+#vitrine .eyebrow { color: #6d28d9; }
+#vitrine article { border-color: rgba(109, 40, 217, .18); box-shadow: 0 12px 28px rgba(76, 29, 149, .08); }
+footer { background: linear-gradient(135deg, #24103f, #4c1d95 58%, #32135f) !important; border-top-color: rgba(196, 181, 253, .3) !important; }
+footer .text-blue-200, footer .text-blue-100 { color: #e9d5ff !important; }
+
+@media (max-width: 767px) {
+  #curso, #vitrine { background: linear-gradient(160deg, #fbf8ff, #f0e8ff) !important; }
+  #curso .container, #vitrine .container { padding-block: 4rem; }
+}
