@@ -13,3 +13,7 @@ export function formatCertificateRegistration(applicationId: number | null | und
   if (!applicationId) return `${CERTIFICATE_REGISTRATION_PREFIX}-PENDING`;
   return `${CERTIFICATE_REGISTRATION_PREFIX}-${new Date().getFullYear()}-${String(applicationId).padStart(6, "0")}`;
 }
+
+export function isValidCertificateRegistration(value: string | null | undefined, applicationId: number) {
+  return Boolean(value && value === formatCertificateRegistration(applicationId));
+}

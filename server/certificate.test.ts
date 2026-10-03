@@ -7,6 +7,7 @@ import {
   CERTIFICATE_TEMPLATE_ASSET,
   CERTIFICATE_TEMPLATE_VERSION,
   formatCertificateRegistration,
+  isValidCertificateRegistration,
 } from "../shared/certificate";
 import { buildCertificateFallbackReport, certificatePreflightInput } from "./db";
 
@@ -35,5 +36,7 @@ describe("certificate model", () => {
   it("formats a unique sequential registration number", () => {
     expect(formatCertificateRegistration(42)).toMatch(/^SE-REG-\d{4}-000042$/);
     expect(formatCertificateRegistration(42, "SE-CERT-2026-00042")).toBe("SE-REG-2026-00042");
+    expect(isValidCertificateRegistration(formatCertificateRegistration(42), 42)).toBe(true);
+    expect(isValidCertificateRegistration("SE-REG-2026-000043", 42)).toBe(false);
   });
 });

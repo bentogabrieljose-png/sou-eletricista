@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { promisify } from "node:util";
 import { InsertUser, applications, certificateReprintRequests, contentItems, courses, examAttempts, materialProgress, messages, notebookPages, notebookVersions, notebooks, studentProgress, users } from "../drizzle/schema";
 import { COURSE_LESSON_URL, EXAM_QUESTIONS, ANSWER_KEY, examUnlockAt, type CourseExamQuestion } from "../shared/course";
-import { CERTIFICATE_CENTER_NAME, CERTIFICATE_DIRECTOR_NAME, CERTIFICATE_DURATION_LABEL, CERTIFICATE_REGISTRATION_PREFIX, CERTIFICATE_TEMPLATE_VERSION } from "../shared/certificate";
+import { CERTIFICATE_CENTER_NAME, CERTIFICATE_DIRECTOR_NAME, CERTIFICATE_DURATION_LABEL, CERTIFICATE_REGISTRATION_PREFIX, CERTIFICATE_TEMPLATE_VERSION, isValidCertificateRegistration } from "../shared/certificate";
 import { CERTIFICATE_REPRINT_FEES } from "../shared/payments";
 import { getTrainingPrice } from "../shared/pricing";
 import { ENV } from "./_core/env";
@@ -616,11 +616,12 @@ export async function listCertificateRequests() {
 export async function authorizeCertificate(applicationId: number, approved: boolean) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  const certificateNumber = `${CERTIFICATE_REGISTRATION_PREFIX}-${new Date().getFullYear()}-${String(applicationId).padStart(6, "0")}`;
+  const certificateNumber = approved ? `${CERTIFICATE_REGISTRATION_PREFIX}-${new Date().getFullYear()}-${String(applicationId).padStart(6, "0")}` : null;
+  if (approved && !isValidCertificateRegistration(certificateNumber, applicationId)) throw new Error("Não foi possível validar o número de registo sequencial.");
   const qrToken = nanoid(20);
-  const result = await db.update(studentProgress).set({ certificateStatus: approved ? "approved" : "rejected", certificateNumber: approved ? certificateNumber : null, qrToken: approved ? qrToken : null, certificateUrl: approved ? `/student/certificate/${qrToken}` : null }).where(and(eq(studentProgress.applicationId, applicationId), eq(studentProgress.certificateStatus, "pending"), eq(studentProgress.examStatus, "passed"), gte(studentProgress.latestScore, 60)));
+  const result = await db.update(studentProgress).set({ certificateStatus: approved ? "approved" : "rejected", certificateNumber, qrToken: approved ? qrToken : null, certificateUrl: approved ? `/student/certificate/${qrToken}` : null }).where(and(eq(studentProgress.applicationId, applicationId), eq(studentProgress.certificateStatus, "pending"), eq(studentProgress.examStatus, "passed"), gte(studentProgress.latestScore, 60)));
   if (!result[0].affectedRows) throw new Error("Só é possível decidir certificados pendentes de alunos com nota superior a 50%.");
-  return certificateNumber;
+  return { certificateNumber, registrationValid: approved && isValidCertificateRegistration(certificateNumber, applicationId) };
 }
 
 export async function getCertificateByToken(qrToken: string) {
