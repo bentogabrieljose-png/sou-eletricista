@@ -11,6 +11,8 @@ describe("direção visual profissional", () => {
     expect(css).toContain("#5b21b6");
     expect(css).toContain("#como-funciona");
     expect(css).toContain(".student-shell .tab-button.tab-active");
+    expect(css).toContain(".student-shell .text-slate-600");
+    expect(css).toContain(".dark .student-shell h1");
   });
 
   it("protege a navegação intuitiva da área do aluno", () => {

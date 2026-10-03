@@ -316,3 +316,46 @@ footer .text-blue-200, footer .text-blue-100 { color: #e9d5ff !important; }
   .student-welcome .section-title { font-size: 2.15rem; }
   .certificate-sheet { width: min(100%, 596px); }
 }
+
+/* Contrast guardrails: never place pale text on a pale card. */
+.student-login { background: linear-gradient(145deg, #f8f5ff, #eef5ff) !important; }
+.student-login h1, .student-login p:not(.eyebrow) { color: #24143d; }
+.student-login .rounded-\[2rem\] { border-color: #d9c8f2 !important; background: #ffffff !important; box-shadow: 0 22px 55px rgba(76,29,149,.14); }
+.student-login input { border-color: #cbb7eb; background: #ffffff; color: #24143d; }
+.student-login input::placeholder { color: #6b5b7e; opacity: 1; }
+.student-login a { color: #5b21b6; }
+.student-shell { color: #24143d; }
+.student-shell h1, .student-shell h2, .student-shell h3, .student-shell strong { color: #24143d; }
+.student-shell p:not(.eyebrow), .student-shell span { color: #514363; }
+.student-shell .text-slate-500, .student-shell .text-slate-600, .student-shell .text-slate-700 { color: #5b4b6d !important; }
+.student-shell .text-white { color: #ffffff !important; }
+.student-shell .bg-white { background: #ffffff !important; }
+.student-shell [class*="dark:bg-white"] { background: #f5f0ff; }
+.student-shell [class*="dark:text-white"] { color: #24143d; }
+.student-shell .student-header { color: #24143d; }
+.student-shell .student-header strong { color: #24143d; }
+.student-shell .student-header .text-slate-500 { color: #665b78 !important; }
+.student-shell .student-profile-card .bg-\[\#eef5ff\] { background: #f1e8ff !important; }
+.student-shell .student-profile-card .text-\[\#0b45ad\] { color: #5b21b6 !important; }
+.student-shell .student-tabs .tab-button:not(.tab-active) { color: #514363; }
+.student-shell .student-tabs .tab-button:not(.tab-active) svg { color: #6d28d9; }
+.student-shell .student-tabs .tab-button.tab-active, .student-shell .student-tabs .tab-button.tab-active * { color: #ffffff !important; }
+.student-shell .bg-amber-50 { background: #fff8dc !important; }
+.student-shell .text-amber-800, .student-shell .text-amber-900 { color: #694f00 !important; }
+.student-shell .bg-emerald-100 { background: #dcfce7 !important; }
+.student-shell .text-emerald-700 { color: #166534 !important; }
+
+.dark .student-shell { background: radial-gradient(circle at 92% 8%, rgba(139,92,246,.24), transparent 28%), linear-gradient(145deg, #100d1d, #18102b 55%, #0b1727) !important; color: #f8fafc; }
+.dark .student-shell h1, .dark .student-shell h2, .dark .student-shell h3, .dark .student-shell strong { color: #f8fafc; }
+.dark .student-shell p:not(.eyebrow), .dark .student-shell span { color: #d8cfee; }
+.dark .student-shell .student-header { background: rgba(16,13,29,.94) !important; color: #f8fafc; }
+.dark .student-shell .student-header strong { color: #f8fafc; }
+.dark .student-shell [class*="dark:bg-white"], .dark .student-shell .bg-white { background: #211637 !important; }
+.dark .student-shell [class*="dark:text-white"], .dark .student-shell .text-slate-500, .dark .student-shell .text-slate-600 { color: #d8cfee !important; }
+.dark .student-shell .text-\[\#0b45ad\] { color: #c4b5fd !important; }
+.dark .student-shell .student-tabs .tab-button:not(.tab-active) { color: #d8cfee; }
+.dark .student-shell .student-tabs .tab-button:not(.tab-active) svg { color: #c4b5fd; }
+.dark .student-shell .bg-amber-50 { background: #3e3010 !important; }
+.dark .student-shell .text-amber-800, .dark .student-shell .text-amber-900 { color: #fde68a !important; }
+.dark .student-shell .bg-emerald-100 { background: #123b28 !important; }
+.dark .student-shell .text-emerald-700 { color: #86efac !important; }

@@ -192,7 +192,7 @@ export default function Aluno() {
     (studentQuery.isFetched && !student);
   if (!accessCode || lookupProblem)
     return (
-      <div className="min-h-screen bg-[#f8fbff] px-4 py-10 text-[#12213a] dark:bg-[#07111f] dark:text-white">
+      <div className="student-login min-h-screen bg-[#f8fbff] px-4 py-10 text-[#12213a] dark:bg-[#07111f] dark:text-white">
         <div className="mx-auto max-w-md rounded-[2rem] border border-blue-100 bg-white p-8 text-center shadow-xl dark:border-white/10 dark:bg-white/5">
           <img
             src={LOGO}
