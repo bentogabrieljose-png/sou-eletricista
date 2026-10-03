@@ -9,6 +9,7 @@ import { sdk } from "./_core/sdk";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { getRequestMetrics } from "./metrics";
+import { generateCertificateRegisterPdf } from "./pdf";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin" && ctx.user.email?.toLowerCase() !== "souelectricista@gmail.com") {
@@ -197,6 +198,22 @@ export const appRouter = router({
     deleteApplicationPermanently: adminProcedure.input(z.object({ applicationNumber: z.string() })).mutation(({ input }) => deleteApplicationPermanently(input.applicationNumber)),
     certificateRequests: adminProcedure.query(() => listCertificateRequests()),
     issuedCertificates: adminProcedure.query(() => listIssuedCertificates()),
+    exportCertificateRegisterPdf: adminProcedure.mutation(async () => {
+      const issued = await listIssuedCertificates();
+      const items = issued
+        .filter(item => item.progress.certificateStatus === "approved" && item.progress.qrToken)
+        .map(item => ({
+          registrationNumber: item.progress.certificateNumber || `SE-REG-${new Date().getFullYear()}-${String(item.progress.applicationId).padStart(6, "0")}`,
+          fullName: item.application.fullName || item.progress.studentName || "Aluno",
+          courseTitle: item.application.courseTitle || item.progress.courseTitle || "Curso",
+          score: item.progress.latestScore,
+          completedAt: item.progress.completedAt,
+          qrToken: item.progress.qrToken,
+        }))
+        .sort((a, b) => a.registrationNumber.localeCompare(b.registrationNumber));
+      const pdf = await generateCertificateRegisterPdf(items);
+      return { fileName: `registo-certificados-${new Date().toISOString().slice(0, 10)}.pdf`, data: pdf.toString("base64"), count: items.length };
+    }),
     certificateReprints: adminProcedure.query(() => listCertificateReprints()),
     deleteStudentDataPermanently: adminProcedure.input(z.object({ applicationId: z.number().int().positive() })).mutation(({ input }) => deleteStudentDataPermanently(input.applicationId)),
     authorizeCertificate: adminProcedure.input(z.object({ applicationId: z.number(), approved: z.boolean() })).mutation(({ input }) => authorizeCertificate(input.applicationId, input.approved)),

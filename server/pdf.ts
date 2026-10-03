@@ -117,6 +117,50 @@ export async function generateCertificatePdf(input: { fullName: string; courseTi
   return Buffer.from(await pdf.save());
 }
 
+export async function generateCertificateRegisterPdf(items: Array<{ registrationNumber: string; fullName: string; courseTitle: string; score?: number | null; completedAt?: Date | string | null; qrToken?: string | null }>) {
+  const pdf = await PDFDocument.create();
+  const font = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const regular = await pdf.embedFont(StandardFonts.Helvetica);
+  const logo = await pdf.embedPng(await logoPng());
+  const blue = rgb(0.03, 0.20, 0.55);
+  const navy = rgb(0.02, 0.10, 0.32);
+  const pale = rgb(0.97, 0.985, 1);
+  const gold = rgb(0.93, 0.70, 0.03);
+  const drawHeader = (page: ReturnType<typeof pdf.addPage>, pageNumber: number) => {
+    page.drawRectangle({ x: 0, y: 0, width: A4.width, height: A4.height, color: pale });
+    page.drawRectangle({ x: 0, y: A4.height - 14, width: A4.width, height: 14, color: gold });
+    page.drawImage(logo, { x: 42, y: 758, width: 48, height: 48 });
+    page.drawText(`${CERTIFICATE_CENTER_NAME.toUpperCase()} — REGISTO DE CERTIFICADOS`, { x: 104, y: 782, size: 13, font, color: blue });
+    page.drawText("Lista sequencial de certificados validados pelo Diretor", { x: 104, y: 765, size: 8, font: regular, color: navy });
+    page.drawText(`Página ${pageNumber}`, { x: 500, y: 770, size: 8, font: regular, color: navy });
+    page.drawLine({ start: { x: 42, y: 742 }, end: { x: 553, y: 742 }, thickness: 1.2, color: blue });
+    const headers = [["REGISTO", 48], ["FORMANDO", 155], ["CURSO", 310], ["NOTA", 468], ["DATA", 505]] as const;
+    headers.forEach(([label, x]) => page.drawText(label, { x, y: 718, size: 7, font, color: blue }));
+    page.drawLine({ start: { x: 42, y: 708 }, end: { x: 553, y: 708 }, thickness: .7, color: gold });
+    return 686;
+  };
+  const pageRows = 25;
+  const pages = Math.max(1, Math.ceil(items.length / pageRows));
+  for (let pageIndex = 0; pageIndex < pages; pageIndex++) {
+    const page = pdf.addPage([A4.width, A4.height]);
+    let y = drawHeader(page, pageIndex + 1);
+    const rows = items.slice(pageIndex * pageRows, (pageIndex + 1) * pageRows);
+    rows.forEach((item, index) => {
+      if (index % 2 === 0) page.drawRectangle({ x: 42, y: y - 5, width: 511, height: 22, color: rgb(.94, .97, 1) });
+      page.drawText(textFit(item.registrationNumber, 23, 7), { x: 48, y, size: 7, font, color: navy });
+      page.drawText(textFit(item.fullName, 25, 7), { x: 155, y, size: 7, font: regular, color: navy });
+      page.drawText(textFit(item.courseTitle, 25, 7), { x: 310, y, size: 7, font: regular, color: navy });
+      page.drawText(`${item.score ?? 0}%`, { x: 475, y, size: 7, font, color: navy });
+      page.drawText(item.completedAt ? new Intl.DateTimeFormat("pt-PT").format(new Date(item.completedAt)) : "—", { x: 505, y, size: 7, font: regular, color: navy });
+      y -= 24;
+    });
+    page.drawLine({ start: { x: 42, y: 52 }, end: { x: 553, y: 52 }, thickness: .7, color: blue });
+    page.drawText(`Total de certificados validados: ${items.length}`, { x: 42, y: 34, size: 8, font, color: blue });
+    page.drawText("Documento interno · emissão automática pelo servidor", { x: 350, y: 34, size: 7, font: regular, color: navy });
+  }
+  return Buffer.from(await pdf.save());
+}
+
 export async function generateEnrollmentReceiptPdf(input: { applicationNumber: string; fullName: string; email: string; nif: string; phone: string; courseTitle: string; paymentMethod: string; createdAt?: Date | string | null }) {
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([A4.width, A4.height]);

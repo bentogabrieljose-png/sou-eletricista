@@ -93,8 +93,8 @@ export default function Verificar() {
             </div>
 
             <div className="certificate-actions print-hide mt-6 flex flex-wrap items-center justify-between gap-4">
-              <div className="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-300">
-                <CheckCircle2 className="h-5 w-5" /> Certificado autenticado digitalmente
+              <div className="flex flex-wrap items-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                <CheckCircle2 className="h-5 w-5" /> <span>Certificado autenticado digitalmente</span><span className="rounded-full bg-emerald-100 px-3 py-1 text-xs text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200">Registo validado · {formatCertificateRegistration(data.application.id, data.progress.certificateNumber)}</span>
               </div>
               <div className="flex flex-wrap gap-3">
                 {!data.isArchived && <>
@@ -102,7 +102,7 @@ export default function Verificar() {
                   <button onClick={printCertificate} disabled={!qrCode} className="inline-flex items-center gap-2 rounded-full border border-blue-200 px-6 py-3 font-extrabold text-[#0b45ad] disabled:cursor-wait disabled:opacity-60 dark:border-white/20 dark:text-white" title={qrCode ? "Abrir impressão no navegador" : "A preparar o QR Code…"}>Imprimir no navegador</button>
                 </>}
                 <Link href={`/segunda-via/${data.progress.qrToken}`} className="inline-flex items-center gap-2 rounded-full border border-amber-300 px-6 py-3 font-extrabold text-amber-700 dark:text-amber-200">
-                  Segunda via do certificado
+                  {data.isArchived ? "Solicitar segunda via paga" : "Segunda via do certificado"}
                 </Link>
                 <Link href="/inscricao" className="inline-flex items-center gap-2 rounded-full border border-blue-200 px-6 py-3 font-extrabold text-[#0b45ad] dark:border-white/20 dark:text-white">
                   Fazer nova inscrição

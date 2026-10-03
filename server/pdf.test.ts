@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateCertificatePdf, generateEnrollmentReceiptPdf } from "./pdf";
+import { generateCertificatePdf, generateCertificateRegisterPdf, generateEnrollmentReceiptPdf } from "./pdf";
 
 describe("server PDF downloads", () => {
   it("generates a clean certificate with one digital layer", async () => {
@@ -28,5 +28,14 @@ describe("server PDF downloads", () => {
     });
     expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
     expect(pdf.length).toBeGreaterThan(1000);
+  });
+
+  it("generates a sequential validated-certificate register PDF", async () => {
+    const pdf = await generateCertificateRegisterPdf([
+      { registrationNumber: "SE-REG-2026-000001", fullName: "Ana Silva", courseTitle: "Electricidade Básica", score: 100, completedAt: new Date("2026-09-30T00:00:00Z"), qrToken: "QR-1" },
+      { registrationNumber: "SE-REG-2026-000002", fullName: "Bruno Lima", courseTitle: "Instalações Elétricas", score: 78, completedAt: new Date("2026-10-01T00:00:00Z"), qrToken: "QR-2" },
+    ]);
+    expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
+    expect(pdf.length).toBeGreaterThan(2500);
   });
 });
