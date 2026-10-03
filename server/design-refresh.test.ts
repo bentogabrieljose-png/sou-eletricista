@@ -1,0 +1,28 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+
+const css = readFileSync(new URL("../client/src/index.css", import.meta.url), "utf8");
+const aluno = readFileSync(new URL("../client/src/pages/Aluno.tsx", import.meta.url), "utf8");
+const pdf = readFileSync(new URL("./pdf.ts", import.meta.url), "utf8");
+
+describe("direção visual profissional", () => {
+  it("mantém o cabeçalho branco e aplica superfícies roxas", () => {
+    expect(css).toContain(".home-site-header");
+    expect(css).toContain("#5b21b6");
+    expect(css).toContain("#como-funciona");
+    expect(css).toContain(".student-shell .tab-button.tab-active");
+  });
+
+  it("protege a navegação intuitiva da área do aluno", () => {
+    expect(aluno).toContain('className="student-shell');
+    expect(aluno).toContain('role="tablist"');
+    expect(aluno).toContain("Meus certificados");
+    expect(aluno).toContain("Ranking da turma");
+  });
+
+  it("usa a paleta institucional no PDF nativo", () => {
+    expect(pdf).toContain("const blue = rgb(0.36, 0.12, 0.67)");
+    expect(pdf).toContain("const navy = rgb(0.14, 0.04, 0.28)");
+    expect(pdf).toContain("formatCertificateRegistration");
+  });
+});

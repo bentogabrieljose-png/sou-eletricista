@@ -241,8 +241,8 @@ export default function Aluno() {
   if (!student) return null;
 
   return (
-    <div className="min-h-screen bg-[#f8fbff] text-[#12213a] dark:bg-[#07111f] dark:text-white">
-      <header className="border-b border-blue-100 bg-white/90 dark:border-white/10 dark:bg-[#07111f]/90">
+    <div className="student-shell min-h-screen bg-[#f8fbff] text-[#12213a] dark:bg-[#07111f] dark:text-white">
+      <header className="student-header border-b border-blue-100 bg-white/90 dark:border-white/10 dark:bg-[#07111f]/90">
         <div className="container flex h-20 items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3">
             <img
@@ -280,7 +280,7 @@ export default function Aluno() {
         </div>
       </header>
       <main className="container py-10">
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-5">
+        <div className="student-welcome mb-8 flex flex-wrap items-end justify-between gap-5">
           <div>
             <p className="eyebrow">Boas-vindas personalizadas</p>
             <h1 className="section-title mt-3">
@@ -294,7 +294,7 @@ export default function Aluno() {
             <CheckCircle2 className="mr-2 inline h-4 w-4" /> Matrícula aprovada
           </span>
         </div>
-        <div className="mb-8 rounded-[2rem] border border-blue-100 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
+        <div className="student-profile-card mb-8 rounded-[2rem] border border-blue-100 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
           <div className="flex flex-wrap items-start justify-between gap-5">
             <div>
               <p className="eyebrow">Os seus dados</p>
@@ -357,7 +357,7 @@ export default function Aluno() {
             </p>
           </div>
         </div>
-        <div className="mt-8 flex flex-wrap gap-2 border-b border-blue-100 dark:border-white/10">
+        <div className="student-tabs mt-8 flex flex-wrap gap-2 border-b border-blue-100 dark:border-white/10" role="tablist" aria-label="Secções da área do aluno">
           <button
             onClick={() => setActiveTab("overview")}
             className={`tab-button ${activeTab === "overview" ? "tab-active" : ""}`}

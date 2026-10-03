@@ -46,10 +46,10 @@ export async function generateCertificatePdf(input: { fullName: string; courseTi
   const font = await pdf.embedFont(StandardFonts.HelveticaBold);
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const signature = await pdf.embedFont(StandardFonts.TimesRomanItalic);
-  const blue = rgb(0.03, 0.20, 0.55);
-  const navy = rgb(0.02, 0.10, 0.32);
+  const blue = rgb(0.36, 0.12, 0.67);
+  const navy = rgb(0.14, 0.04, 0.28);
   const gold = rgb(0.93, 0.70, 0.03);
-  const teal = rgb(0.02, 0.48, 0.55);
+  const teal = rgb(0.22, 0.58, 0.62);
   const bronze = rgb(0.62, 0.30, 0.10);
   const bronzeLight = rgb(0.86, 0.56, 0.22);
   const pale = rgb(0.97, 0.985, 1);
