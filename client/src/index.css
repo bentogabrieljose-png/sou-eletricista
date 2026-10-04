@@ -392,3 +392,24 @@ footer .text-blue-200, footer .text-blue-100 { color: #e9d5ff !important; }
 @media (prefers-reduced-motion: reduce) { .metallic-title, .section-title, .site-lightning-bg h1, .site-lightning-bg h2, .site-lightning-bg h3, .student-shell h1, .student-shell h2, .student-shell h3 { animation: none; } }
 .dark .metallic-title, .dark .section-title, .dark .site-lightning-bg h1, .dark .site-lightning-bg h2, .dark .site-lightning-bg h3, .dark .student-shell h1, .dark .student-shell h2, .dark .student-shell h3 { background-image: linear-gradient(112deg, #f8fafc, #c4b5fd 28%, #f4c542 53%, #d6d3d1 72%, #f8fafc); -webkit-text-stroke-color: rgba(23,11,45,.7); text-shadow: 0 2px 0 rgba(0,0,0,.55), 0 8px 20px rgba(0,0,0,.3); }
 .dark .home-site-header { background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(235,238,242,.96)) !important; }
+
+/* Deep-blue site surfaces: the logo's blue remains the visual anchor. */
+.site-lightning-bg { background: #071f51 !important; }
+.site-lightning-bg .home-hero h1, .site-lightning-bg .home-hero h2, .site-lightning-bg .home-hero h3, .site-lightning-bg .home-hero .section-title, .site-lightning-bg .home-hero .metallic-title { background-image: linear-gradient(112deg, #ffffff 0%, #dbeafe 28%, #f4c542 52%, #fff5b8 66%, #c4b5fd 84%, #ffffff 100%); -webkit-text-stroke-color: rgba(2,15,47,.8); text-shadow: 0 2px 0 rgba(2,15,47,.55), 0 8px 22px rgba(0,0,0,.3); }
+.site-lightning-bg .home-hero p { color: #dbeafe !important; }
+.site-lightning-bg .home-hero .text-slate-500 { color: #bfdbfe !important; }
+.site-lightning-bg .home-hero > div:first-child { background: radial-gradient(circle at 78% 14%, rgba(243,189,8,.22), transparent 24%), linear-gradient(120deg, #0a347d 0%, #071f51 58%, #102e63 100%) !important; }
+.site-lightning-bg .home-hero > div:nth-child(2) { opacity: .14; mix-blend-mode: screen; }
+#curso, #vitrine { background: linear-gradient(145deg, #09275b, #071f51) !important; border-color: rgba(255,255,255,.12) !important; color: #f8fbff; }
+#curso .section-title, #vitrine .section-title, #curso h3, #vitrine h3 { color: #ffffff; }
+#curso > .container > .grid > p, #vitrine p:not(.eyebrow) { color: #dbeafe; }
+#curso .rounded-3xl, #vitrine article { border-color: rgba(255,255,255,.2); background: rgba(255,255,255,.96); box-shadow: 0 18px 38px rgba(0,0,0,.18); }
+#curso .rounded-3xl p, #vitrine article p:not(.eyebrow) { color: #42526a; }
+#curso .eyebrow, #vitrine .eyebrow { color: #f4c542 !important; }
+.effects-control { flex: 0 0 auto; }
+.effects-control select { max-width: 9.2rem; cursor: pointer; }
+.effects-soft .floating-energy-icon { animation-duration: 9s; opacity: .55; }
+.effects-soft .metallic-title, .effects-soft .section-title, .effects-soft .site-lightning-bg h1, .effects-soft .site-lightning-bg h2, .effects-soft .site-lightning-bg h3 { animation-duration: 18s; }
+.effects-off .floating-energy-icon, .effects-off .metallic-title, .effects-off .section-title, .effects-off .site-lightning-bg h1, .effects-off .site-lightning-bg h2, .effects-off .site-lightning-bg h3 { animation: none !important; }
+.effects-off .home-nav-link:hover, .effects-off .student-shell .tab-button:hover { transform: none !important; }
+@media (max-width: 639px) { .effects-control { padding-inline: .5rem; } .effects-control select { width: 1.1rem; max-width: 1.1rem; padding: 0; color: transparent; } .effects-control select option { color: #27364d; } }

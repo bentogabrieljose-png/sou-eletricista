@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { ArrowRight, BookOpen, CheckCircle2, Clock3, Lightbulb, Moon, PlayCircle, PlugZap, Share2, ShieldCheck, Sun, Users, Zap } from "lucide-react";
+import { ArrowRight, BookOpen, CheckCircle2, Clock3, Lightbulb, Moon, PlayCircle, PlugZap, Share2, ShieldCheck, SlidersHorizontal, Sun, Users, Zap } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import { LoadingBar } from "@/components/PageLoader";
@@ -23,6 +23,10 @@ function MediaPreview({ url, posterUrl, durationSeconds, processingStatus }: { u
 
 export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [effectIntensity, setEffectIntensity] = useState<"normal" | "soft" | "off">(() => {
+    const stored = localStorage.getItem("sou-effects");
+    return stored === "soft" || stored === "off" ? stored : "normal";
+  });
   const { theme, toggleTheme } = useTheme();
   const { data: courses } = trpc.public.courses.useQuery();
   const { data: content } = trpc.public.content.useQuery();
@@ -38,6 +42,10 @@ export default function Home() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    localStorage.setItem("sou-effects", effectIntensity);
+  }, [effectIntensity]);
+
   const shareCenter = async () => {
     const shareData = { title: "Sou Eletricista", text: "Conheça o Sou Eletricista e comece a sua formação em eletricidade.", url: window.location.origin };
     if (navigator.share) await navigator.share(shareData);
@@ -45,7 +53,7 @@ export default function Home() {
   };
 
   return (
-    <div className="site-lightning-bg min-h-screen overflow-hidden bg-[#f8fbff] text-[#12213a] dark:bg-[#07111f] dark:text-white">
+    <div className={`site-lightning-bg effects-${effectIntensity} min-h-screen overflow-hidden bg-[#071f51] text-[#12213a] dark:bg-[#061735] dark:text-white`}>
       <header className={`home-site-header sticky top-0 z-40 border-b border-blue-100/80 bg-white/90 backdrop-blur dark:border-white/10 dark:bg-[#07111f]/90 ${isScrolled ? "is-scrolled" : ""}`}>
         <div className="container flex h-20 items-center justify-between gap-5">
           <Link href="/" className="flex shrink-0 items-center gap-3">
@@ -71,6 +79,15 @@ export default function Home() {
             <button onClick={toggleTheme} aria-label="Alternar tema" className="rounded-full border border-blue-100 p-2.5 transition hover:bg-blue-50 dark:border-white/15 dark:hover:bg-white/10">
               {theme === "dark" ? <Sun className="h-4 w-4 text-[#ffd326]" /> : <Moon className="h-4 w-4 text-[#0b45ad]" />}
             </button>
+            <label className="effects-control flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-2.5 py-2 text-xs font-extrabold text-[#27364d] shadow-sm" title="Ajustar intensidade dos efeitos">
+              <SlidersHorizontal className="h-3.5 w-3.5 text-[#8a4b22]" />
+              <span className="sr-only">Intensidade dos efeitos</span>
+              <select aria-label="Intensidade dos efeitos visuais" value={effectIntensity} onChange={e => setEffectIntensity(e.target.value as "normal" | "soft" | "off")} className="bg-transparent font-extrabold outline-none">
+                <option value="normal">Efeitos normais</option>
+                <option value="soft">Efeitos suaves</option>
+                <option value="off">Sem efeitos</option>
+              </select>
+            </label>
             <Link href="/inscricao" className="hidden shrink-0 rounded-full bg-[#f3bd08] px-4 py-3 text-sm font-extrabold text-[#0b2c68] shadow-lg shadow-yellow-200 transition hover:-translate-y-0.5 hover:bg-[#ffd43b] sm:inline-flex">Começar agora</Link>
           </div>
         </div>
@@ -78,7 +95,7 @@ export default function Home() {
 
       <LoadingBar visible={isLoading} />
       <main>
-        <section className="relative isolate">
+        <section className="home-hero relative isolate">
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_78%_14%,rgba(243,189,8,.25),transparent_24%),linear-gradient(120deg,#eaf3ff_0%,#f8fbff_55%,#fff9e5_100%)] dark:bg-[radial-gradient(circle_at_78%_14%,rgba(243,189,8,.16),transparent_24%),linear-gradient(120deg,#0d2445_0%,#07111f_60%,#17264b_100%)]" />
           <div className="pointer-events-none absolute inset-0 -z-10 bg-cover bg-center opacity-20 mix-blend-multiply dark:opacity-25 dark:mix-blend-screen" style={{ backgroundImage: `url(${HERO_BACKGROUND})` }} />
           <div className="container relative grid min-h-[680px] items-center gap-12 py-20 lg:grid-cols-[1.05fr_.95fr] lg:py-24">
