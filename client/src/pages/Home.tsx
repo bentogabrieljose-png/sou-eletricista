@@ -9,6 +9,7 @@ import { youtubeEmbedUrl } from "@shared/media";
 const LOGO = "/manus-storage/sou-eletricista-logo_a1bfc7b7.png";
 const HERO_BACKGROUND = "/manus-storage/power-grid-sunset_2ecb2782.jpg";
 const SECTION_BACKGROUND = "/manus-storage/eco-lightbulb_a3841562.jpg";
+const isImageUrl = (url?: string | null) => Boolean(url && /\.(png|jpe?g|gif|webp|svg)(\?|_|$)/i.test(url));
 function MediaPreview({ url, posterUrl, durationSeconds, processingStatus }: { url: string; posterUrl?: string | null; durationSeconds?: number | null; processingStatus?: string | null }) {
   const youtubeUrl = youtubeEmbedUrl(url);
   if (youtubeUrl) return <div className="relative aspect-video bg-black"><iframe className="h-full w-full" src={youtubeUrl} title="Vídeo da Vitrine" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" /><a href={url} target="_blank" rel="noopener noreferrer" className="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-2 text-xs font-bold text-[#082d70] shadow">Abrir no YouTube</a></div>;
@@ -34,6 +35,19 @@ export default function Home() {
   const updates = content?.filter(item => item.kind === "update").slice(0, 3) ?? [];
   const videos = content?.filter(item => item.kind !== "update").slice(0, 2) ?? [];
   const isLoading = courses === undefined || content === undefined;
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const [galleryPaused, setGalleryPaused] = useState(false);
+  const galleryItems = [
+    ...(courses ?? []).map(course => ({ id: `course-${course.id}`, label: "Curso em destaque", title: course.title, description: course.description, image: SECTION_BACKGROUND, href: "#curso" })),
+    ...(content ?? []).filter(item => item.mediaUrl || item.mediaPosterUrl).map(item => ({
+      id: `content-${item.id}`,
+      label: item.kind === "update" ? "Projeto do centro" : "Conteúdo publicado",
+      title: item.title,
+      description: item.body || "Explore este projeto e acompanhe as novidades do centro.",
+      image: item.mediaPosterUrl || (isImageUrl(item.mediaUrl) ? item.mediaUrl : HERO_BACKGROUND),
+      href: "#vitrine",
+    })),
+  ].slice(0, 8);
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 12);
@@ -45,6 +59,16 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem("sou-effects", effectIntensity);
   }, [effectIntensity]);
+
+  useEffect(() => {
+    if (galleryItems.length < 2 || galleryPaused) return;
+    const timer = window.setInterval(() => setGalleryIndex(index => (index + 1) % galleryItems.length), 5200);
+    return () => window.clearInterval(timer);
+  }, [galleryItems.length, galleryPaused]);
+
+  useEffect(() => {
+    if (galleryIndex >= galleryItems.length && galleryItems.length > 0) setGalleryIndex(0);
+  }, [galleryIndex, galleryItems.length]);
 
   const shareCenter = async () => {
     const shareData = { title: "Sou Eletricista", text: "Conheça o Sou Eletricista e comece a sua formação em eletricidade.", url: window.location.origin };
@@ -125,6 +149,31 @@ export default function Home() {
                   <div className="absolute bottom-5 left-5 right-5 rounded-2xl border border-white/20 bg-black/20 px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.18em] text-white backdrop-blur">Centro de Formação Técnico Profissional</div>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="galeria" className="home-gallery border-y border-white/15 py-20" aria-labelledby="gallery-heading" onMouseEnter={() => setGalleryPaused(true)} onMouseLeave={() => setGalleryPaused(false)} onFocus={() => setGalleryPaused(true)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setGalleryPaused(false); }}>
+          <div className="container">
+            <div className="flex flex-wrap items-end justify-between gap-5">
+              <div><p className="eyebrow text-[#ffd43b]">Projetos e cursos</p><h2 id="gallery-heading" className="mt-3 font-display text-3xl font-black text-white sm:text-4xl">Veja o que está a acontecer no centro.</h2></div>
+              <p className="max-w-md text-sm leading-6 text-blue-100">A Coordenação pode publicar novos cursos, projetos e imagens na Vitrine; esta galeria atualiza-se automaticamente.</p>
+            </div>
+            <div className="relative mt-9 overflow-hidden rounded-[2rem] border border-white/20 bg-[#071b45] shadow-2xl">
+              {galleryItems.length > 0 && <div className="grid min-h-[360px] lg:grid-cols-[1.15fr_.85fr]">
+                <div className="relative min-h-[260px] overflow-hidden">
+                  <img key={galleryItems[galleryIndex]?.id} src={galleryItems[galleryIndex]?.image || HERO_BACKGROUND} alt="" className="home-gallery-image absolute inset-0 h-full w-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#071b45]/95 via-[#071b45]/55 to-transparent" />
+                </div>
+                <div className="relative z-10 flex flex-col justify-center p-8 sm:p-10 lg:-ml-12 lg:pl-2">
+                  <span className="w-fit rounded-full bg-[#ffd43b] px-3 py-1 text-xs font-black uppercase tracking-[.16em] text-[#17234b]">{galleryItems[galleryIndex]?.label}</span>
+                  <h3 className="mt-5 font-display text-2xl font-black leading-tight text-white sm:text-3xl">{galleryItems[galleryIndex]?.title}</h3>
+                  <p className="mt-4 max-w-lg text-base leading-7 text-blue-100">{galleryItems[galleryIndex]?.description}</p>
+                  <a href={galleryItems[galleryIndex]?.href} className="mt-7 inline-flex w-fit items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-[#1b1550] shadow-lg hover:-translate-y-0.5 hover:bg-[#fff7d2]">Explorar publicação <ArrowRight className="h-4 w-4" /></a>
+                </div>
+              </div>}
+              {galleryItems.length === 0 && <div className="p-10 text-white"><p className="font-display text-2xl font-black">A galeria será preenchida pela Coordenação.</p><p className="mt-3 text-blue-100">Publique o primeiro projeto ou curso na Vitrine.</p></div>}
+              {galleryItems.length > 1 && <div className="absolute bottom-5 left-6 right-6 z-20 flex items-center justify-between gap-4"><div className="flex gap-2" role="tablist" aria-label="Projetos e cursos em destaque">{galleryItems.map((item, index) => <button key={item.id} type="button" role="tab" aria-selected={galleryIndex === index} aria-label={`Mostrar ${item.title}`} onClick={() => setGalleryIndex(index)} className={`home-gallery-dot ${galleryIndex === index ? "is-active" : ""}`} />)}</div><span className="rounded-full bg-black/55 px-3 py-1 text-xs font-bold text-white">{galleryPaused ? "Pausada" : "Rotação automática"}</span></div>}
             </div>
           </div>
         </section>

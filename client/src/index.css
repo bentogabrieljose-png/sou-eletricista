@@ -423,3 +423,43 @@ footer .text-blue-200, footer .text-blue-100 { color: #e9d5ff !important; }
 .internal-photo-bg .student-tabs { border-color: rgba(255,255,255,.3); }
 .internal-photo-bg .tab-button { color: #e0ecff; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
 .internal-photo-bg .tab-button:hover, .internal-photo-bg .tab-active { color: #ffd84d; }
+
+
+/* Galeria pública e overrides finais de legibilidade: esta camada vem depois da identidade metálica. */
+.home-gallery { background: linear-gradient(135deg, #071b45 0%, #17205b 52%, #29104d 100%); }
+.home-gallery-image { animation: gallery-image-in 420ms var(--ease-out); }
+.home-gallery-dot { width: .7rem; height: .7rem; border: 2px solid rgba(255,255,255,.8); border-radius: 999px; background: transparent; }
+.home-gallery-dot.is-active { width: 2rem; border-color: #ffd43b; background: #ffd43b; }
+.home-gallery-dot:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+@keyframes gallery-image-in { from { opacity: .2; transform: scale(1.025); } to { opacity: 1; transform: scale(1); } }
+
+.metallic-title, .section-title, .site-lightning-bg h1, .site-lightning-bg h2, .site-lightning-bg h3, .student-shell h1, .student-shell h2, .student-shell h3 { background: none !important; background-image: none !important; -webkit-background-clip: initial !important; background-clip: initial !important; -webkit-text-fill-color: currentColor !important; color: #24133f !important; -webkit-text-stroke: 0 !important; text-shadow: none !important; animation: none !important; }
+.site-lightning-bg .home-hero h1, .site-lightning-bg .home-hero h2, .site-lightning-bg .home-hero h3 { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; text-shadow: 0 2px 4px rgba(0,0,0,.72) !important; }
+.site-lightning-bg .home-hero h1 span { color: #ffd43b !important; -webkit-text-fill-color: #ffd43b !important; }
+.site-lightning-bg .home-hero p { color: #f3f7ff !important; text-shadow: 0 1px 3px rgba(0,0,0,.45); }
+.site-lightning-bg .home-hero .text-slate-500 { color: #e1ebff !important; }
+.eyebrow, .student-shell .eyebrow { color: #815700 !important; text-shadow: none !important; }
+.site-lightning-bg .eyebrow, .home-gallery .eyebrow, #como-funciona .eyebrow, #curso .eyebrow, #vitrine .eyebrow { color: #ffd43b !important; }
+.home-nav-link { color: #1c1740 !important; font-weight: 900; }
+.home-nav-link:hover, .home-nav-link:focus-visible { color: #4c1d95 !important; }
+.home-site-header .effects-control, .home-site-header .effects-control select { color: #24133f !important; }
+#curso .section-title, #vitrine .section-title { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; }
+#curso .rounded-3xl h3, #vitrine article h3 { color: #24133f !important; -webkit-text-fill-color: #24133f !important; }
+#curso .rounded-3xl p, #vitrine article p:not(.eyebrow) { color: #334155 !important; }
+.site-lightning-bg main > section.container { color: #ffffff; }
+.site-lightning-bg main > section.container > div > div > .section-title, .site-lightning-bg main > section.container > div > .section-title { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; }
+.site-lightning-bg main > section.container > div > p { color: #e6efff !important; }
+.site-lightning-bg main > section.container article h3 { color: #24133f !important; -webkit-text-fill-color: #24133f !important; }
+.site-lightning-bg main > section.container article p { color: #334155 !important; }
+.dark .metallic-title, .dark .section-title, .dark .site-lightning-bg h1, .dark .site-lightning-bg h2, .dark .site-lightning-bg h3, .dark .student-shell h1, .dark .student-shell h2, .dark .student-shell h3 { color: #ffffff !important; }
+.dark #curso .rounded-3xl h3, .dark #vitrine article h3, .dark .site-lightning-bg main > section.container article h3 { color: #24133f !important; -webkit-text-fill-color: #24133f !important; }
+
+@media (prefers-reduced-motion: reduce) { .home-gallery-image, .home-gallery-dot, .home-nav-link { animation: none !important; transition: none !important; } }
+
+/* Correções específicas vistas no preview: cada superfície recebe a cor do seu fundo. */
+.home-gallery h2, .home-gallery h3, .home-gallery p { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; }
+#como-funciona .section-title, #como-funciona h3 { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; }
+#como-funciona p:not(.eyebrow) { color: #e8efff !important; }
+.site-lightning-bg main > section.container:not(#curso) { color: #24133f; }
+.site-lightning-bg main > section.container:not(#curso) .section-title { color: #24133f !important; -webkit-text-fill-color: #24133f !important; }
+.site-lightning-bg main > section.container:not(#curso) > div > p { color: #475569 !important; }

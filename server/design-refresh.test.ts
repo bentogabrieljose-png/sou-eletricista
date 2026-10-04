@@ -38,6 +38,11 @@ describe("direção visual profissional", () => {
     expect(home).toContain('aria-label="Intensidade dos efeitos visuais"');
     expect(home).toContain('localStorage.setItem("sou-effects"');
     expect(home).toContain('value="off"');
+    expect(home).toContain('id="galeria"');
+    expect(home).toContain('role="tablist"');
+    expect(home).toContain("Rotação automática");
+    expect(css).toContain(".home-gallery-dot.is-active");
+    expect(css).toContain("-webkit-text-fill-color: currentColor");
   });
 
   it("usa a paleta institucional no PDF nativo", () => {
