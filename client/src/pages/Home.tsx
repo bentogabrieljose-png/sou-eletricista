@@ -7,8 +7,8 @@ import { LoadingBar } from "@/components/PageLoader";
 import { youtubeEmbedUrl } from "@shared/media";
 
 const LOGO = "/manus-storage/sou-eletricista-logo_a1bfc7b7.png";
-const HERO_BACKGROUND = "/manus-storage/site-lightning-background_733076e4.jpeg";
-const SECTION_BACKGROUND = "/manus-storage/electricity-section-background_d153577d.jpg";
+const HERO_BACKGROUND = "/manus-storage/power-grid-sunset_2ecb2782.jpg";
+const SECTION_BACKGROUND = "/manus-storage/eco-lightbulb_a3841562.jpg";
 function MediaPreview({ url, posterUrl, durationSeconds, processingStatus }: { url: string; posterUrl?: string | null; durationSeconds?: number | null; processingStatus?: string | null }) {
   const youtubeUrl = youtubeEmbedUrl(url);
   if (youtubeUrl) return <div className="relative aspect-video bg-black"><iframe className="h-full w-full" src={youtubeUrl} title="Vídeo da Vitrine" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" /><a href={url} target="_blank" rel="noopener noreferrer" className="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-2 text-xs font-bold text-[#082d70] shadow">Abrir no YouTube</a></div>;

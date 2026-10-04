@@ -18,8 +18,11 @@ describe("direção visual profissional", () => {
     expect(css).toContain("prefers-reduced-motion: reduce");
     expect(css).toContain(".effects-soft");
     expect(css).toContain(".effects-off");
-    expect(css).toContain(".site-lightning-bg { background: #071f51");
+    expect(css).toContain(".site-lightning-bg { background-color: #071f51");
     expect(css).toContain(".site-lightning-bg .home-hero p");
+    expect(css).toContain("power-grid-sunset_2ecb2782.jpg");
+    expect(css).toContain("eco-lightbulb_a3841562.jpg");
+    expect(css).toContain(".internal-photo-bg");
   });
 
   it("protege a navegação intuitiva da área do aluno", () => {
@@ -27,6 +30,7 @@ describe("direção visual profissional", () => {
     expect(aluno).toContain('role="tablist"');
     expect(aluno).toContain("Meus certificados");
     expect(aluno).toContain("Ranking da turma");
+    expect(aluno).toContain("internal-photo-bg");
   });
 
   it("oferece o controlo de intensidade no cabeçalho", () => {

@@ -192,7 +192,7 @@ export default function Aluno() {
     (studentQuery.isFetched && !student);
   if (!accessCode || lookupProblem)
     return (
-      <div className="student-login min-h-screen bg-[#f8fbff] px-4 py-10 text-[#12213a] dark:bg-[#07111f] dark:text-white">
+      <div className="student-login internal-photo-bg min-h-screen bg-[#f8fbff] px-4 py-10 text-[#12213a] dark:bg-[#07111f] dark:text-white">
         <div className="mx-auto max-w-md rounded-[2rem] border border-blue-100 bg-white p-8 text-center shadow-xl dark:border-white/10 dark:bg-white/5">
           <img
             src={LOGO}
@@ -241,7 +241,7 @@ export default function Aluno() {
   if (!student) return null;
 
   return (
-    <div className="student-shell min-h-screen bg-[#f8fbff] text-[#12213a] dark:bg-[#07111f] dark:text-white">
+    <div className="student-shell internal-photo-bg min-h-screen bg-[#f8fbff] text-[#12213a] dark:bg-[#07111f] dark:text-white">
       <header className="student-header border-b border-blue-100 bg-white/90 dark:border-white/10 dark:bg-[#07111f]/90">
         <div className="container flex h-20 items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3">

@@ -75,14 +75,14 @@
 @layer base {
   * { @apply border-border; }
   html { scroll-behavior: smooth; }
-  body { @apply bg-background text-foreground; font-family: 'DM Sans', system-ui, sans-serif; background-image: linear-gradient(145deg, #f7f8fa, #e7eaef 52%, #f8f8f6); }
+  body { @apply bg-background text-foreground; font-family: 'DM Sans', system-ui, sans-serif; background-image: linear-gradient(rgba(4,23,58,.72), rgba(4,23,58,.72)), url('/manus-storage/power-grid-sunset_2ecb2782.jpg'); background-position: center; background-size: cover; background-attachment: fixed; }
   button, a { transition: transform 160ms cubic-bezier(.23,1,.32,1), background-color 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
   button:active, a:active { transform: scale(.98); }
 }
 
 .site-lightning-bg { position: relative; isolation: isolate; }
-.site-lightning-bg::before { content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none; background: linear-gradient(135deg, rgba(238,241,245,.94), rgba(255,251,232,.82)), url('/manus-storage/site-lightning-background_733076e4.jpeg') center/cover no-repeat; opacity: .34; }
-.site-lightning-bg::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(circle at 18% 12%, rgba(11,69,173,.12), transparent 24%), radial-gradient(circle at 84% 36%, rgba(243,189,8,.12), transparent 28%); }
+.site-lightning-bg::before { content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none; background: linear-gradient(135deg, rgba(4,23,58,.72), rgba(7,31,81,.58)), url('/manus-storage/power-grid-sunset_2ecb2782.jpg') center/cover no-repeat; opacity: 1; }
+.site-lightning-bg::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(135deg, rgba(4,23,58,.04), rgba(4,23,58,.18)), url('/manus-storage/eco-lightbulb_a3841562.jpg') right bottom/38% auto no-repeat; opacity: .32; }
 .floating-energy-icon { position: absolute; filter: drop-shadow(0 8px 14px rgba(11,69,173,.18)); animation: energy-float 4.8s ease-in-out infinite; }
 .floating-energy-icon:nth-child(2) { animation-delay: -1.6s; }
 .floating-energy-icon:nth-child(3) { animation-delay: -3.1s; }
@@ -217,7 +217,7 @@
 ::selection { background: #ffd326; color: #061b52; }
 :focus-visible { outline: 3px solid #ffd326; outline-offset: 3px; }
 body { letter-spacing: .005em; }
-.site-lightning-bg { background: linear-gradient(145deg, rgba(248,251,255,.94), rgba(238,247,255,.94) 48%, rgba(255,251,225,.92)); }
+.site-lightning-bg { background: linear-gradient(145deg, rgba(4,23,58,.82), rgba(7,31,81,.72) 48%, rgba(17,54,108,.78)), url('/manus-storage/power-grid-sunset_2ecb2782.jpg') center/cover fixed; }
 .site-lightning-bg::before { opacity: .24; filter: saturate(1.22) contrast(1.05); }
 .home-site-header { border-bottom-color: rgba(8,45,112,.2); background: rgba(255,255,255,.94); box-shadow: 0 6px 24px rgba(8,45,112,.08); }
 .home-site-header.is-scrolled { background: rgba(255,255,255,.98); box-shadow: 0 16px 36px rgba(8,45,112,.16); }
@@ -394,7 +394,7 @@ footer .text-blue-200, footer .text-blue-100 { color: #e9d5ff !important; }
 .dark .home-site-header { background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(235,238,242,.96)) !important; }
 
 /* Deep-blue site surfaces: the logo's blue remains the visual anchor. */
-.site-lightning-bg { background: #071f51 !important; }
+.site-lightning-bg { background-color: #071f51 !important; background-image: linear-gradient(145deg, rgba(4,23,58,.82), rgba(7,31,81,.72) 48%, rgba(17,54,108,.78)), url('/manus-storage/power-grid-sunset_2ecb2782.jpg') !important; background-position: center; background-size: cover; background-attachment: fixed; }
 .site-lightning-bg .home-hero h1, .site-lightning-bg .home-hero h2, .site-lightning-bg .home-hero h3, .site-lightning-bg .home-hero .section-title, .site-lightning-bg .home-hero .metallic-title { background-image: linear-gradient(112deg, #ffffff 0%, #dbeafe 28%, #f4c542 52%, #fff5b8 66%, #c4b5fd 84%, #ffffff 100%); -webkit-text-stroke-color: rgba(2,15,47,.8); text-shadow: 0 2px 0 rgba(2,15,47,.55), 0 8px 22px rgba(0,0,0,.3); }
 .site-lightning-bg .home-hero p { color: #dbeafe !important; }
 .site-lightning-bg .home-hero .text-slate-500 { color: #bfdbfe !important; }
@@ -413,3 +413,13 @@ footer .text-blue-200, footer .text-blue-100 { color: #e9d5ff !important; }
 .effects-off .floating-energy-icon, .effects-off .metallic-title, .effects-off .section-title, .effects-off .site-lightning-bg h1, .effects-off .site-lightning-bg h2, .effects-off .site-lightning-bg h3 { animation: none !important; }
 .effects-off .home-nav-link:hover, .effects-off .student-shell .tab-button:hover { transform: none !important; }
 @media (max-width: 639px) { .effects-control { padding-inline: .5rem; } .effects-control select { width: 1.1rem; max-width: 1.1rem; padding: 0; color: transparent; } .effects-control select option { color: #27364d; } }
+
+/* A mesma identidade fotográfica continua nas áreas autenticadas. */
+.internal-photo-bg { position: relative; isolation: isolate; background-image: linear-gradient(rgba(4,23,58,.76), rgba(4,23,58,.76)), url('/manus-storage/power-grid-sunset_2ecb2782.jpg') !important; background-position: center; background-size: cover; background-attachment: fixed; }
+.internal-photo-bg::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: url('/manus-storage/eco-lightbulb_a3841562.jpg') right bottom/32% auto no-repeat; opacity: .2; }
+.internal-photo-bg .student-header, .internal-photo-bg > div > .flex.items-center.gap-3.rounded-2xl { background-color: rgba(255,255,255,.94); backdrop-filter: blur(12px); }
+.internal-photo-bg .student-welcome, .internal-photo-bg > div > .mt-8 { color: #f8fbff; }
+.internal-photo-bg .student-welcome p:not(.eyebrow), .internal-photo-bg > div > div > p.text-slate-600 { color: #dbeafe !important; }
+.internal-photo-bg .student-tabs { border-color: rgba(255,255,255,.3); }
+.internal-photo-bg .tab-button { color: #e0ecff; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
+.internal-photo-bg .tab-button:hover, .internal-photo-bg .tab-active { color: #ffd84d; }
