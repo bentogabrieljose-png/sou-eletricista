@@ -152,6 +152,14 @@ export default function Home() {
           </div>
         </section>
 
+        <div className="home-floating-enroll-wrap" aria-label="Inscrição no curso">
+          <Link href="/inscricao" className="home-floating-enroll">
+            <span className="home-floating-enroll-pulse" aria-hidden="true" />
+            <span>Fazer inscrição</span>
+            <ArrowRight className="h-5 w-5" aria-hidden="true" />
+          </Link>
+        </div>
+
         <section id="galeria" className="home-gallery border-y border-white/15 py-20" aria-labelledby="gallery-heading" onMouseEnter={() => setGalleryPaused(true)} onMouseLeave={() => setGalleryPaused(false)} onFocus={() => setGalleryPaused(true)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setGalleryPaused(false); }}>
           <div className="container">
             <div className="flex flex-wrap items-end justify-between gap-5">

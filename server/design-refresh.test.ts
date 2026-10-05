@@ -41,6 +41,7 @@ describe("direção visual profissional", () => {
     expect(home).toContain('id="galeria"');
     expect(home).toContain('role="tablist"');
     expect(home).toContain("Rotação automática");
+    expect(home).toContain("Fazer inscrição");
     expect(css).toContain(".home-gallery-dot.is-active");
     expect(css).toContain("-webkit-text-fill-color: currentColor");
     expect(css).toContain("html, body { background-color: #d96b00");
@@ -48,6 +49,8 @@ describe("direção visual profissional", () => {
     expect(css).toContain("1000075479-Removed_2963e950.png");
     expect(css).toContain("rgba(2, 28, 5, .78)");
     expect(css).toContain(".home-nav-link { background: #ffffff");
+    expect(css).toContain(".home-site-header, .internal-photo-bg .student-header");
+    expect(css).toContain(".home-floating-enroll");
   });
 
   it("usa a paleta institucional no PDF nativo", () => {
