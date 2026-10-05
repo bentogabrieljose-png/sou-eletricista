@@ -556,3 +556,35 @@ html, body {
 @keyframes enroll-pulse { 0% { opacity: .8; transform: scale(.98); } 70%, 100% { opacity: 0; transform: scale(1.13); } }
 @media (prefers-reduced-motion: reduce) { .home-floating-enroll, .home-floating-enroll-pulse { animation: none !important; transition: none !important; } }
 @media (max-width: 639px) { .home-floating-enroll-wrap { margin-top: -1.6rem; } .home-floating-enroll { min-height: 3.25rem; padding-inline: 1.15rem; font-size: .92rem; } }
+
+
+/* CTA responsivo: mantém o botão inteiro visível, sem sobreposição pelo cabeçalho. */
+.home-floating-enroll-wrap {
+  margin: 0 auto !important;
+  padding: 1rem 1rem 1.5rem !important;
+  overflow: visible !important;
+}
+.home-floating-enroll {
+  width: min(100%, 19rem);
+  justify-content: center;
+  min-height: 3.35rem;
+  padding: .78rem 1.15rem;
+  font-size: clamp(.86rem, 1.6vw, 1rem);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.home-floating-enroll-pulse { pointer-events: none; }
+@media (max-width: 639px) {
+  .home-floating-enroll-wrap { padding: .85rem .75rem 1.25rem !important; }
+  .home-floating-enroll {
+    width: min(100%, 17rem);
+    min-height: 3rem;
+    gap: .5rem;
+    padding: .7rem 1rem;
+    font-size: .86rem;
+    border-width: 2px;
+  }
+}
+@media (min-width: 640px) and (max-width: 1023px) {
+  .home-floating-enroll { width: min(100%, 18rem); }
+}
