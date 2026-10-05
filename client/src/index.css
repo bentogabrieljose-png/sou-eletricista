@@ -485,3 +485,53 @@ html, body { background-color: #d96b00 !important; background-image: none !impor
 .home-gallery h2, .home-gallery h3, .home-gallery p { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; }
 .internal-photo-bg .student-welcome, .internal-photo-bg > div > .mt-8 { color: #ffffff; }
 .internal-photo-bg .student-welcome p:not(.eyebrow), .internal-photo-bg > div > div > p.text-slate-600 { color: #fff8ec !important; }
+
+
+/* Fundo visual fornecido pelo utilizador: imagem verde com camada de contraste para leitura. */
+html, body {
+  background-color: #062b09 !important;
+  background-image: linear-gradient(rgba(2, 28, 5, .78), rgba(2, 28, 5, .78)), url('/manus-storage/1000075479-Removed_2963e950.png') !important;
+  background-position: center;
+  background-size: cover;
+  background-attachment: fixed;
+}
+.site-lightning-bg {
+  background-color: #062b09 !important;
+  background-image: linear-gradient(135deg, rgba(2, 28, 5, .76), rgba(4, 61, 10, .7)), url('/manus-storage/1000075479-Removed_2963e950.png') !important;
+  background-position: center;
+  background-size: cover;
+  background-attachment: fixed;
+}
+.site-lightning-bg::before, .site-lightning-bg::after { background: none !important; opacity: 0 !important; }
+.internal-photo-bg {
+  background-color: #062b09 !important;
+  background-image: linear-gradient(rgba(2, 28, 5, .8), rgba(2, 28, 5, .8)), url('/manus-storage/1000075479-Removed_2963e950.png') !important;
+  background-position: center;
+  background-size: cover;
+  background-attachment: fixed;
+}
+.internal-photo-bg::after { background: none !important; opacity: 0 !important; }
+.site-lightning-bg .home-hero > div:first-child {
+  background: linear-gradient(135deg, rgba(2, 28, 5, .82), rgba(4, 61, 10, .72)), url('/manus-storage/1000075479-Removed_2963e950.png') center/cover !important;
+}
+.site-lightning-bg .home-hero > div:nth-child(2) { display: none !important; }
+#curso, #vitrine, #como-funciona {
+  background-image: linear-gradient(rgba(2, 28, 5, .84), rgba(2, 28, 5, .86)), url('/manus-storage/1000075479-Removed_2963e950.png') !important;
+  background-position: center;
+  background-size: cover;
+}
+.home-site-header { background: rgba(255,255,255,.97) !important; }
+.home-nav-link { background: #ffffff !important; border-color: #cbd5e1 !important; color: #14213d !important; box-shadow: 0 6px 18px rgba(0,0,0,.2) !important; }
+.home-nav-link:hover, .home-nav-link:focus-visible { background: #fef3c7 !important; color: #172554 !important; }
+.site-lightning-bg .home-hero h1, .site-lightning-bg .home-hero h2, .site-lightning-bg .home-hero h3 { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; text-shadow: 0 3px 5px rgba(0,0,0,.85) !important; }
+.site-lightning-bg .home-hero h1 span { color: #ffd43b !important; -webkit-text-fill-color: #ffd43b !important; }
+.site-lightning-bg .home-hero p, .internal-photo-bg .student-welcome p:not(.eyebrow) { color: #f5fff2 !important; text-shadow: 0 2px 4px rgba(0,0,0,.65); }
+.home-gallery { background: linear-gradient(rgba(2, 28, 5, .86), rgba(2, 28, 5, .88)), url('/manus-storage/1000075479-Removed_2963e950.png') center/cover !important; }
+#como-funciona .section-title, #como-funciona h3, .home-gallery h2, .home-gallery h3 { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; text-shadow: 0 2px 4px rgba(0,0,0,.7); }
+#como-funciona p:not(.eyebrow), .home-gallery p { color: #efffeb !important; }
+.site-lightning-bg main > section.container:not(#curso) .section-title { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; text-shadow: 0 2px 4px rgba(0,0,0,.7); }
+.site-lightning-bg main > section.container:not(#curso) > div > p { color: #efffeb !important; }
+.site-lightning-bg main > section.container article { background: rgba(255,255,255,.97) !important; }
+.site-lightning-bg main > section.container article h3 { color: #24133f !important; -webkit-text-fill-color: #24133f !important; text-shadow: none; }
+.site-lightning-bg main > section.container article p { color: #334155 !important; text-shadow: none; }
+@media (max-width: 767px) { html, body, .site-lightning-bg, .internal-photo-bg { background-attachment: scroll; } }

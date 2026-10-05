@@ -45,6 +45,9 @@ describe("direção visual profissional", () => {
     expect(css).toContain("-webkit-text-fill-color: currentColor");
     expect(css).toContain("html, body { background-color: #d96b00");
     expect(css).toContain(".site-lightning-bg::before, .site-lightning-bg::after { background: none");
+    expect(css).toContain("1000075479-Removed_2963e950.png");
+    expect(css).toContain("rgba(2, 28, 5, .78)");
+    expect(css).toContain(".home-nav-link { background: #ffffff");
   });
 
   it("usa a paleta institucional no PDF nativo", () => {
