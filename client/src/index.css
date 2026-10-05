@@ -463,3 +463,25 @@ footer .text-blue-200, footer .text-blue-100 { color: #e9d5ff !important; }
 .site-lightning-bg main > section.container:not(#curso) { color: #24133f; }
 .site-lightning-bg main > section.container:not(#curso) .section-title { color: #24133f !important; -webkit-text-fill-color: #24133f !important; }
 .site-lightning-bg main > section.container:not(#curso) > div > p { color: #475569 !important; }
+
+
+/* Fundo laranja institucional solicitado: sem fotografias nas superfícies da plataforma. */
+html, body { background-color: #d96b00 !important; background-image: none !important; }
+.site-lightning-bg { background: #d96b00 !important; background-image: none !important; }
+.site-lightning-bg::before, .site-lightning-bg::after { background: none !important; opacity: 0 !important; }
+.internal-photo-bg { background: #d96b00 !important; background-image: none !important; }
+.internal-photo-bg::after { background: none !important; opacity: 0 !important; }
+.site-lightning-bg .home-hero > div:first-child { background: linear-gradient(145deg, #f08a18 0%, #d96b00 58%, #b94f00 100%) !important; }
+.site-lightning-bg .home-hero > div:nth-child(2) { display: none !important; }
+#curso, #vitrine { background: linear-gradient(145deg, #d96b00, #b95200) !important; }
+#como-funciona { background: linear-gradient(145deg, #f08a18, #c85a00) !important; }
+.site-lightning-bg main > section.container:not(#curso) { color: #251535; }
+.site-lightning-bg main > section.container:not(#curso) .section-title { color: #251535 !important; -webkit-text-fill-color: #251535 !important; }
+.site-lightning-bg main > section.container:not(#curso) > div > p { color: #3b2631 !important; }
+.site-lightning-bg .home-hero h1, .site-lightning-bg .home-hero h2, .site-lightning-bg .home-hero h3 { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; text-shadow: 0 2px 4px rgba(76,27,0,.72) !important; }
+.site-lightning-bg .home-hero p { color: #fff8ec !important; }
+.site-lightning-bg .home-hero h1 span { color: #24133f !important; -webkit-text-fill-color: #24133f !important; }
+.home-gallery { background: linear-gradient(135deg, #a94300 0%, #d96b00 52%, #f08a18 100%) !important; }
+.home-gallery h2, .home-gallery h3, .home-gallery p { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; }
+.internal-photo-bg .student-welcome, .internal-photo-bg > div > .mt-8 { color: #ffffff; }
+.internal-photo-bg .student-welcome p:not(.eyebrow), .internal-photo-bg > div > div > p.text-slate-600 { color: #fff8ec !important; }

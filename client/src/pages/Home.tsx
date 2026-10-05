@@ -121,7 +121,6 @@ export default function Home() {
       <main>
         <section className="home-hero relative isolate">
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_78%_14%,rgba(243,189,8,.25),transparent_24%),linear-gradient(120deg,#eaf3ff_0%,#f8fbff_55%,#fff9e5_100%)] dark:bg-[radial-gradient(circle_at_78%_14%,rgba(243,189,8,.16),transparent_24%),linear-gradient(120deg,#0d2445_0%,#07111f_60%,#17264b_100%)]" />
-          <div className="pointer-events-none absolute inset-0 -z-10 bg-cover bg-center opacity-20 mix-blend-multiply dark:opacity-25 dark:mix-blend-screen" style={{ backgroundImage: `url(${HERO_BACKGROUND})` }} />
           <div className="container relative grid min-h-[680px] items-center gap-12 py-20 lg:grid-cols-[1.05fr_.95fr] lg:py-24">
             <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true"><Lightbulb className="floating-energy-icon left-[8%] top-[18%] h-10 w-10 text-[#f3bd08]" /><PlugZap className="floating-energy-icon right-[7%] top-[24%] h-9 w-9 text-[#0b45ad] dark:text-[#ffd326]" /><Zap className="floating-energy-icon bottom-[13%] left-[46%] h-8 w-8 text-[#f3bd08]" /></div>
             <div className="max-w-2xl">
@@ -192,7 +191,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="como-funciona" className="bg-[#0b45ad] bg-cover bg-center py-24 text-white" style={{ backgroundImage: `linear-gradient(rgba(11,69,173,.9),rgba(7,31,81,.94)), url(${SECTION_BACKGROUND})` }}>
+        <section id="como-funciona" className="bg-[#d96b00] py-24 text-white">
           <div className="container"><div className="grid gap-12 lg:grid-cols-[.7fr_1.3fr] lg:items-end"><div><p className="eyebrow text-[#ffd326]">Um caminho simples</p><h2 className="section-title mt-4 text-white">Da inscrição ao seu certificado.</h2></div><p className="max-w-xl text-lg leading-8 text-blue-100">Faça a inscrição, envie o comprovativo e aguarde a validação da Coordenação. Depois, estude no seu ritmo e conclua a avaliação.</p></div><div className="mt-12 grid gap-4 md:grid-cols-4">{["Inscreva-se", "Aguarde a aprovação", "Faça a formação", "Conquiste o certificado"].map((step, index) => <div key={step} className="relative rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur"><span className="font-display text-4xl font-black text-[#ffd326]">0{index + 1}</span><h3 className="mt-8 font-display text-xl font-extrabold">{step}</h3><p className="mt-3 text-sm leading-6 text-blue-100">{["Preencha os seus dados e escolha o meio de pagamento.", "A equipa verifica os dados e o comprovativo enviado.", "Aceda ao material e conte com apoio durante a jornada.", "Passe no teste e aguarde a autorização final." ][index]}</p></div>)}</div></div>
         </section>
 
