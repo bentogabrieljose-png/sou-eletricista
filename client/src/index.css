@@ -588,3 +588,37 @@ html, body {
 @media (min-width: 640px) and (max-width: 1023px) {
   .home-floating-enroll { width: min(100%, 18rem); }
 }
+
+
+/* Modo Dia: vermelho institucional no cabeçalho, mantendo contraste AA e identidade do centro. */
+html:not(.dark) .home-site-header,
+html:not(.dark) .internal-photo-bg .student-header,
+html:not(.dark) .internal-photo-bg > div > .flex.items-center.gap-3.rounded-2xl {
+  background: linear-gradient(135deg, #7f1018, #b91c1c 58%, #8f111b) !important;
+  border-color: rgba(255,255,255,.28) !important;
+  color: #ffffff !important;
+}
+html:not(.dark) .home-site-header .font-display,
+html:not(.dark) .home-site-header p,
+html:not(.dark) .home-site-header .student-header,
+html:not(.dark) .student-header strong { color: #ffffff !important; }
+html:not(.dark) .home-site-header .home-nav-link { background: #fff7f7 !important; border-color: #fecaca !important; color: #5f1016 !important; }
+html:not(.dark) .home-site-header .home-nav-link:hover,
+html:not(.dark) .home-site-header .home-nav-link:focus-visible { background: #ffd43b !important; border-color: #fff0a8 !important; color: #3f1014 !important; }
+html:not(.dark) .home-site-header .effects-control,
+html:not(.dark) .home-site-header button[aria-label="Alternar tema"] { background: #fff7f7 !important; border-color: #fecaca !important; color: #5f1016 !important; }
+html:not(.dark) .home-site-header + .loading-bar, html:not(.dark) .loading-bar { background: linear-gradient(90deg, #7f1018, #ef4444, #ffd43b); }
+/* Sala visual: botões são cartões reconhecíveis com símbolo, nome e foco evidente. */
+.student-shell .student-tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: .7rem; border-bottom: 0; }
+.student-shell .student-tabs .tab-button { justify-content: flex-start; min-height: 4.2rem; border: 1px solid rgba(124,58,237,.16); border-radius: 1.2rem; background: rgba(255,255,255,.94); box-shadow: 0 8px 18px rgba(35,18,70,.08); }
+.student-shell .student-tabs .tab-button svg { flex: 0 0 auto; }
+.student-shell .student-tabs .tab-button.tab-active { box-shadow: 0 12px 24px rgba(91,33,182,.28); }
+@media (max-width: 767px) { .student-shell .student-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; padding-bottom: .4rem; } .student-shell .student-tabs .tab-button { min-width: 9.2rem; } }
+.vitrine-page-card { content-visibility: auto; contain-intrinsic-size: 360px; }
+
+.vitrine-page h1 { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; text-shadow: 0 3px 7px rgba(0,0,0,.86) !important; }
+.vitrine-page .eyebrow { color: #ffd43b !important; text-shadow: 0 2px 4px rgba(0,0,0,.75) !important; }
+.vitrine-page main { min-height: calc(100vh - 9rem); }
+
+/* O hero atual usa o segundo filho como contentor de conteúdo; não o tratar como camada fotográfica. */
+.site-lightning-bg .home-hero > div:nth-child(2) { display: grid !important; opacity: 1 !important; mix-blend-mode: normal !important; }

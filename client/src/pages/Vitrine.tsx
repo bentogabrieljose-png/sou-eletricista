@@ -1,0 +1,31 @@
+import { ArrowLeft, ExternalLink, PlayCircle } from "lucide-react";
+import { Link } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { LoadingBar } from "@/components/PageLoader";
+import { youtubeEmbedUrl } from "@shared/media";
+
+const LOGO = "/manus-storage/sou-eletricista-logo_a1bfc7b7.png";
+const isImage = (url?: string | null) => Boolean(url && /\.(png|jpe?g|gif|webp|svg)(\?|_|$)/i.test(url));
+
+function MediaPreview({ url, posterUrl, durationSeconds, processingStatus }: { url: string; posterUrl?: string | null; durationSeconds?: number | null; processingStatus?: string | null }) {
+  const youtube = youtubeEmbedUrl(url);
+  if (youtube) return <div className="relative aspect-video bg-black"><iframe className="h-full w-full" src={youtube} title="Vídeo da Vitrine" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /><a href={url} target="_blank" rel="noopener noreferrer" className="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-2 text-xs font-bold text-[#073b1b] shadow">Abrir no YouTube</a></div>;
+  const clean = url.toLowerCase().split("?")[0];
+  if (/\.(mp3|wav|ogg|m4a|aac)(_|$)/.test(clean)) return <div className="flex aspect-video items-center justify-center bg-[#063b18] p-6"><audio className="w-full" controls src={url} /></div>;
+  if (isImage(url)) return <div className="aspect-video bg-slate-100"><img className="h-full w-full object-cover" src={url} alt="Conteúdo publicado na Vitrine" /></div>;
+  if (/\.pdf(_|$)/.test(clean)) return <div className="flex aspect-video items-center justify-center bg-[#063b18] p-6"><a className="rounded-full bg-[#ffd43b] px-5 py-3 font-extrabold text-[#17220c]" href={url} target="_blank" rel="noreferrer">Abrir PDF</a></div>;
+  const direct = /\.(mp4|webm|ogv|ogg|mov|m4v|mkv|avi|mpeg|mpg|3gp)(_|$)/.test(clean) || url.startsWith("/manus-storage/");
+  if (!direct) return <div className="flex aspect-video flex-col items-center justify-center gap-3 bg-[#063b18] p-5 text-center text-white"><PlayCircle className="h-12 w-12 text-[#ffd43b]" /><p className="text-sm">Este conteúdo abre no fornecedor original.</p><a className="rounded-full bg-[#ffd43b] px-5 py-3 font-bold text-[#17220c]" href={url} target="_blank" rel="noopener noreferrer">Abrir conteúdo</a></div>;
+  return <div className="relative aspect-video bg-black"><video className="h-full w-full object-contain" controls playsInline preload="metadata" poster={posterUrl || undefined} src={url}>O navegador não suporta este vídeo. <a href={url}>Abrir ficheiro.</a></video><div className="absolute bottom-3 left-3 flex items-center gap-2"><span className="rounded-full bg-black/65 px-3 py-2 text-xs font-bold text-white">{durationSeconds ? `${Math.floor(durationSeconds / 60)}:${String(durationSeconds % 60).padStart(2, "0")}` : processingStatus === "processed" ? "Vídeo otimizado" : "Vídeo original"}</span><a className="rounded-full bg-white/90 px-3 py-2 text-xs font-extrabold text-[#073b1b] shadow" href={url} target="_blank" rel="noopener noreferrer">Abrir / descarregar</a></div></div>;
+}
+
+export default function Vitrine() {
+  const { data, isLoading } = trpc.public.content.useQuery();
+  const items = data ?? [];
+  return <div className="site-lightning-bg vitrine-page min-h-screen text-white">
+    <header className="home-site-header sticky top-0 z-40 border-b backdrop-blur"><div className="container flex min-h-20 items-center justify-between gap-4 py-3"><Link href="/" className="flex items-center gap-3"><img src={LOGO} alt="Sou Eletricista" className="h-12 w-12 rounded-full object-cover" /><span className="hidden font-display text-lg font-black sm:block">Sou Eletricista</span></Link><nav className="flex items-center gap-2"><Link href="/" className="home-nav-link"><ArrowLeft className="mr-1 h-4 w-4" /> Home</Link><Link href="/inscricao" className="home-nav-link bg-[#ffd43b]">Fazer inscrição <ExternalLink className="ml-1 h-4 w-4" /></Link></nav></div></header>
+    <LoadingBar visible={isLoading} />
+    <main className="container py-14 sm:py-20"><div className="mx-auto max-w-3xl text-center"><p className="eyebrow text-[#ffd43b]">Conteúdos do centro</p><h1 className="mt-3 font-display text-4xl font-black sm:text-6xl">Vitrine de projetos e cursos</h1><p className="mt-5 text-lg leading-8 text-emerald-50">Explore vídeos, atualizações, projetos e materiais publicados pela Coordenação.</p></div><div className="mt-12 grid gap-7 md:grid-cols-2 lg:grid-cols-3">{items.map(item => <article key={item.id} className="overflow-hidden rounded-[2rem] border border-white/20 bg-white text-[#17220c] shadow-2xl"><div>{item.mediaUrl ? <MediaPreview url={item.mediaUrl} posterUrl={item.mediaPosterUrl} durationSeconds={item.mediaDurationSeconds} processingStatus={item.mediaProcessingStatus} /> : <div className="flex aspect-video items-center justify-center bg-[#063b18]"><PlayCircle className="h-12 w-12 text-[#ffd43b]" /></div>}</div><div className="p-6"><p className="text-xs font-black uppercase tracking-widest text-[#a35e00]">{item.kind === "update" ? "Atualização" : item.mediaProcessingStatus === "processed" ? "Vídeo otimizado" : "Conteúdo"}</p><h2 className="mt-2 font-display text-xl font-black">{item.title}</h2>{item.body && <p className="mt-3 text-sm leading-6 text-slate-600">{item.body}</p>}</div></article>)}{items.length === 0 && <div className="md:col-span-2 lg:col-span-3 rounded-[2rem] border border-white/20 bg-black/20 p-10 text-center"><PlayCircle className="mx-auto h-12 w-12 text-[#ffd43b]" /><h2 className="mt-4 font-display text-2xl font-black">A Vitrine está a ser preparada.</h2><p className="mt-2 text-emerald-50">A Coordenação poderá publicar aqui os próximos conteúdos.</p></div>}</div></main>
+    <footer className="border-t border-white/15 bg-[#063b18] py-10"><div className="container flex flex-wrap items-center justify-between gap-5"><div className="flex items-center gap-3"><img src={LOGO} alt="" className="h-12 w-12 rounded-full" /><span className="font-bold">Sou Eletricista</span></div><Link href="/inscricao" className="rounded-full bg-[#ffd43b] px-5 py-3 font-black text-[#17220c]">Fazer inscrição</Link></div></footer>
+  </div>;
+}

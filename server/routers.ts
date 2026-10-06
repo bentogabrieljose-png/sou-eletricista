@@ -173,12 +173,14 @@ export const appRouter = router({
     }),
     certificateReprintStatus: publicProcedure.input(z.object({ id: z.number().int().positive(), requesterEmail: z.string().email() })).query(({ input }) => getCertificateReprintStatus(input.id, input.requesterEmail)),
     requestCertificateReprint: publicProcedure.input(z.object({ qrToken: z.string().min(8), requesterName: z.string().min(3), requesterEmail: z.string().email(), paymentMethod: z.string().min(2), feeAmount: z.number().int().positive(), feeCurrency: z.string().min(2).max(8), proofData: z.string().min(20), proofName: z.string().min(1).max(255), proofType: z.string().optional() })).mutation(({ input }) => createCertificateReprint(input)),
-    assistant: publicProcedure.input(z.object({ question: z.string().min(2), history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string() })).default([]) })).mutation(async ({ input }) => {
+    assistant: publicProcedure.input(z.object({ accessCode: z.string().min(5), question: z.string().min(2), history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string() })).default([]), imageData: z.string().max(5_000_000).optional(), libraryContext: z.string().max(4000).optional() })).mutation(async ({ input }) => {
+      const student = await getStudentByCode(input.accessCode);
+      if (!student || student.application.status !== "approved") throw new TRPCError({ code: "FORBIDDEN", message: "O tutor está disponível apenas para alunos com inscrição aprovada." });
       const response = await invokeLLM({
         messages: [
-          { role: "system", content: "Você é Sou Eletricista. Responda sempre em português claro, curto e objetivo: dê apenas a resposta específica, os passos essenciais e um alerta de segurança quando necessário. Nunca incentive trabalho energizado ou improvisações perigosas." },
+          { role: "system", content: "Você é Sou Eletricista IA, tutor de uma sala profissional de eletricidade. Responda em português claro, intuitivo e objetivo, adaptando a explicação ao histórico da conversa. Estruture respostas com passos essenciais, exemplos simples e alerta de segurança quando necessário. Nunca incentive trabalho energizado ou improvisações perigosas. Quando o aluno pedir um resumo da biblioteca, explique que consegue resumir texto, imagens, manuais ou transcrições que sejam enviados na conversa; não invente acesso a ficheiros privados que não foram fornecidos." },
           ...input.history.map(message => ({ role: message.role as "user" | "assistant", content: message.content })),
-          { role: "user", content: input.question },
+          { role: "user", content: input.imageData ? [{ type: "text", text: `${input.question}\nContexto disponível: ${input.libraryContext || "nenhum"}` }, { type: "image_url", image_url: { url: input.imageData, detail: "auto" } }] : `${input.question}\nContexto disponível: ${input.libraryContext || "nenhum"}` },
         ],
       });
       const content = response.choices?.[0]?.message?.content;

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 const db = readFileSync(new URL("./db.ts", import.meta.url), "utf8");
 const schema = readFileSync(new URL("../drizzle/schema.ts", import.meta.url), "utf8");
 const coordination = readFileSync(new URL("../client/src/pages/Coordenacao.tsx", import.meta.url), "utf8");
-const home = readFileSync(new URL("../client/src/pages/Home.tsx", import.meta.url), "utf8");
+const home = readFileSync(new URL("../client/src/pages/Vitrine.tsx", import.meta.url), "utf8");
 const certificate = readFileSync(new URL("../client/src/pages/Verificar.tsx", import.meta.url), "utf8");
 const pdf = readFileSync(new URL("./pdf.ts", import.meta.url), "utf8");
 

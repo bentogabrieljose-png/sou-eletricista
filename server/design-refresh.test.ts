@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const css = readFileSync(new URL("../client/src/index.css", import.meta.url), "utf8");
-const aluno = readFileSync(new URL("../client/src/pages/Aluno.tsx", import.meta.url), "utf8");
+  const aluno = readFileSync(new URL("../client/src/pages/Aluno.tsx", import.meta.url), "utf8");
+  const vitrine = readFileSync(new URL("../client/src/pages/Vitrine.tsx", import.meta.url), "utf8");
 const pdf = readFileSync(new URL("./pdf.ts", import.meta.url), "utf8");
 
 describe("direção visual profissional", () => {
@@ -38,9 +39,9 @@ describe("direção visual profissional", () => {
     expect(home).toContain('aria-label="Intensidade dos efeitos visuais"');
     expect(home).toContain('localStorage.setItem("sou-effects"');
     expect(home).toContain('value="off"');
-    expect(home).toContain('id="galeria"');
-    expect(home).toContain('role="tablist"');
-    expect(home).toContain("Rotação automática");
+    expect(vitrine).toContain("Vitrine de projetos e cursos");
+    expect(vitrine).toContain("MediaPreview");
+    expect(vitrine).toContain("/inscricao");
     expect(home).toContain("Fazer inscrição");
     expect(css).toContain(".home-gallery-dot.is-active");
     expect(css).toContain("-webkit-text-fill-color: currentColor");
@@ -51,6 +52,9 @@ describe("direção visual profissional", () => {
     expect(css).toContain(".home-nav-link { background: #ffffff");
     expect(css).toContain(".home-site-header, .internal-photo-bg .student-header");
     expect(css).toContain(".home-floating-enroll");
+    expect(css).toContain("html:not(.dark) .home-site-header");
+    expect(aluno).toContain("ImagePlus");
+    expect(aluno).toContain("SpeechSynthesisUtterance");
   });
 
   it("usa a paleta institucional no PDF nativo", () => {

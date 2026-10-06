@@ -14,6 +14,10 @@ import {
   NotebookPen,
   LogOut,
   MessageCircle,
+  Mic,
+  ImagePlus,
+  Volume2,
+  X,
   Send,
   Sparkles,
   Trophy,
@@ -45,6 +49,9 @@ export default function Aluno() {
     { role: "user" | "assistant"; content: string }[]
   >([]);
   const [question, setQuestion] = useState("");
+  const [assistantImage, setAssistantImage] = useState<string | null>(null);
+  const [assistantImageName, setAssistantImageName] = useState("");
+  const [isListening, setIsListening] = useState(false);
   const [messageSubject, setMessageSubject] = useState("");
   const [messageBody, setMessageBody] = useState("");
   const studentQuery = trpc.student.getByCode.useQuery(
@@ -113,6 +120,12 @@ export default function Aluno() {
   const assistant = trpc.student.assistant.useMutation({
     onSuccess: data => {
       setChat(items => [...items, { role: "assistant", content: data.answer }]);
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(data.answer);
+        utterance.lang = "pt-PT";
+        window.speechSynthesis.speak(utterance);
+      }
     },
     onError: error => toast.error(error.message),
   });
@@ -124,6 +137,16 @@ export default function Aluno() {
         student.application.accessCode
       );
   }, [student]);
+  useEffect(() => {
+    if (!accessCode) return;
+    try {
+      const saved = localStorage.getItem(`sou-eletricista-ai-${accessCode}`);
+      if (saved) setChat(JSON.parse(saved));
+    } catch { /* histórico corrompido: começar novamente */ }
+  }, [accessCode]);
+  useEffect(() => {
+    if (accessCode && chat.length) localStorage.setItem(`sou-eletricista-ai-${accessCode}`, JSON.stringify(chat.slice(-24)));
+  }, [accessCode, chat]);
   useEffect(() => {
     if (!accessCode || !studentQuery.isLoading) {
       setLookupTimedOut(false);
@@ -173,7 +196,36 @@ export default function Aluno() {
     const userMessage = question.trim();
     setQuestion("");
     setChat(items => [...items, { role: "user", content: userMessage }]);
-    assistant.mutate({ question: userMessage, history: chat });
+    assistant.mutate({ accessCode, question: userMessage, history: chat, imageData: assistantImage || undefined, libraryContext: libraryUrl ? `Biblioteca protegida disponível ao aluno: ${libraryUrl}. O aluno pode enviar aqui texto, imagem ou transcrição de um material para resumo.` : undefined });
+    setAssistantImage(null);
+    setAssistantImageName("");
+  };
+  const startVoiceInput = () => {
+    const Recognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!Recognition) return toast.error("O reconhecimento de voz não é suportado neste navegador.");
+    const recognition = new Recognition();
+    recognition.lang = "pt-PT";
+    recognition.interimResults = false;
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => { setIsListening(false); toast.error("Não foi possível captar a voz."); };
+    recognition.onresult = (event: any) => setQuestion((event.results?.[0]?.[0]?.transcript || "").trim());
+    recognition.start();
+  };
+  const readLastAnswer = () => {
+    const last = [...chat].reverse().find(item => item.role === "assistant");
+    if (!last || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(last.content);
+    utterance.lang = "pt-PT";
+    window.speechSynthesis.speak(utterance);
+  };
+  const handleAssistantImage = (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/") || file.size > 3_500_000) return toast.error("Escolha uma imagem até 3,5 MB.");
+    const reader = new FileReader();
+    reader.onload = () => { setAssistantImage(String(reader.result)); setAssistantImageName(file.name); };
+    reader.readAsDataURL(file);
   };
   const send = (event: FormEvent) => {
     event.preventDefault();
@@ -604,13 +656,21 @@ export default function Aluno() {
                 </div>
               ))}
             </div>
-            <form onSubmit={askAssistant} className="mt-4 flex gap-3">
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button type="button" onClick={() => setQuestion("Resume o material da biblioteca que eu enviar e destaca os pontos essenciais.")} className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-extrabold text-emerald-800 hover:bg-emerald-100">Resumir material</button>
+              <button type="button" onClick={readLastAnswer} className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-extrabold text-blue-800 hover:bg-blue-100"><Volume2 className="h-4 w-4" /> Ouvir resposta</button>
+              {assistantImageName && <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900">{assistantImageName}<button type="button" onClick={() => { setAssistantImage(null); setAssistantImageName(""); }} aria-label="Remover imagem"><X className="h-3.5 w-3.5" /></button></span>}
+            </div>
+            <form onSubmit={askAssistant} className="mt-3 flex flex-wrap gap-3">
               <input
                 className="field-input"
+                style={{ flex: "1 1 18rem" }}
                 value={question}
                 onChange={e => setQuestion(e.target.value)}
-                placeholder="Escreva a sua pergunta…"
+                placeholder="Escreva ou dite a sua pergunta…"
               />
+              <label className="inline-flex cursor-pointer items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-4 font-extrabold text-emerald-800 hover:bg-emerald-100" title="Analisar uma imagem"><ImagePlus className="mr-2 h-4 w-4" /> Imagem<input type="file" accept="image/*" className="hidden" onChange={e => handleAssistantImage(e.target.files?.[0])} /></label>
+              <button type="button" onClick={startVoiceInput} aria-label="Ditar pergunta" className={`inline-flex items-center justify-center rounded-full px-4 font-extrabold text-white ${isListening ? "bg-red-600" : "bg-[#063b18]"}`}><Mic className="h-4 w-4" /> <span className="ml-2 hidden sm:inline">{isListening ? "A ouvir…" : "Falar"}</span></button>
               <button
                 disabled={assistant.isPending}
                 className="rounded-full bg-[#f3bd08] px-5 font-extrabold text-[#082d70]"

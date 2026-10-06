@@ -18,6 +18,7 @@ describe("training pricing and Vitrine media", () => {
     const schema = readFileSync("drizzle/schema.ts", "utf8");
     const coordination = readFileSync("client/src/pages/Coordenacao.tsx", "utf8");
     const home = readFileSync("client/src/pages/Home.tsx", "utf8");
+    const vitrine = readFileSync("client/src/pages/Vitrine.tsx", "utf8");
     const student = readFileSync("client/src/pages/Aluno.tsx", "utf8");
     const studentCertificate = readFileSync("client/src/components/StudentCertificatePanel.tsx", "utf8");
     expect(db).toContain("uploadContentMedia");
@@ -29,7 +30,7 @@ describe("training pricing and Vitrine media", () => {
     expect(schema).toContain("proofInspectionStatus");
     expect(coordination).toContain('accept="*/*"');
     expect(coordination).toContain("Eliminar permanentemente este conteúdo da Vitrine");
-    expect(home).toContain("MediaPreview");
+    expect(vitrine).toContain("MediaPreview");
     expect(home).toContain("isScrolled");
     expect(home).toContain("home-site-header");
     expect(student).toContain("Meus certificados");

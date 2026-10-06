@@ -12,10 +12,12 @@ import NotFound from "./pages/NotFound";
 import Verificar from "./pages/Verificar";
 import SobreDiretor from "./pages/SobreDiretor";
 import SegundaVia from "./pages/SegundaVia";
+import Vitrine from "./pages/Vitrine";
 
 function Router() {
   return <Switch>
     <Route path="/" component={Home} />
+    <Route path="/vitrine" component={Vitrine} />
     <Route path="/inscricao" component={Inscricao} />
     <Route path="/aluno" component={Aluno} />
     <Route path="/coordenacao" component={Coordenacao} />
