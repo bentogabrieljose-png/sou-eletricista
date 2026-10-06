@@ -42,6 +42,11 @@ describe("direção visual profissional", () => {
     expect(vitrine).toContain("Vitrine de projetos e cursos");
     expect(vitrine).toContain("MediaPreview");
     expect(vitrine).toContain("/inscricao");
+    expect(vitrine).toContain("vitrine-tablet-shell");
+    expect(vitrine).toContain("Atualização automática");
+    expect(vitrine).toContain("Pausar animação");
+    expect(vitrine).toContain("Retomar animação");
+    expect(css).toContain("@keyframes vitrine-board-enter");
     expect(home).toContain("Fazer inscrição");
     expect(css).toContain(".home-gallery-dot.is-active");
     expect(css).toContain("-webkit-text-fill-color: currentColor");
