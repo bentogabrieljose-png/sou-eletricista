@@ -63,6 +63,7 @@ export async function generateCertificatePdf(input: { fullName: string; courseTi
   page.drawRectangle({ x: 0, y: 0, width: A4.width, height: 54, color: navy });
   page.drawRectangle({ x: 0, y: A4.height - 16, width: A4.width, height: 16, color: gold });
   const logo = await pdf.embedPng(await logoPng());
+  page.drawImage(logo, { x: 173, y: 315, width: 250, height: 250, opacity: .065 });
   page.drawImage(logo, { x: 42, y: 690, width: 92, height: 92 });
   page.drawText(CERTIFICATE_CENTER_NAME.toUpperCase(), { x: 150, y: 755, size: 19, font, color: blue });
   page.drawText("CENTRO DE FORMAÇÃO TÉCNICO PROFISSIONAL", { x: 151, y: 736, size: 8.5, font: regular, color: blue });
@@ -73,8 +74,8 @@ export async function generateCertificatePdf(input: { fullName: string; courseTi
   center("CERTIFICADO DE CONCLUSÃO", 650, 25, font, navy, 500);
   center("ESTE CERTIFICADO É CONCEDIDO A", 610, 9, regular, blue, 400);
   const name = input.fullName.trim().toUpperCase();
-  center(name, 566, 22, font, blue, 480);
-  page.drawLine({ start: { x: 72, y: 550 }, end: { x: 523, y: 550 }, thickness: 1.2, color: gold });
+  center(name, 566, 22, font, bronze, 480);
+  page.drawLine({ start: { x: 72, y: 550 }, end: { x: 523, y: 550 }, thickness: 2.2, color: gold });
   center("por ter concluído com aproveitamento o curso de", 510, 10, regular, blue, 460);
   const courseLines = wrapLines(input.courseTitle, font, 18, 470);
   courseLines.forEach((line, i) => center(line, 475 - i * 24, 18, font, navy, 470));
@@ -98,6 +99,10 @@ export async function generateCertificatePdf(input: { fullName: string; courseTi
   page.drawText("Verifique a autenticidade em:", { x: 158, y: 116, size: 8, font: regular, color: blue });
   page.drawText(CERTIFICATE_VERIFICATION_SITE, { x: 158, y: 101, size: 8, font, color: blue });
   const registration = formatCertificateRegistration(input.applicationId, input.certificateNumber);
+  page.drawEllipse({ x: 486, y: 139, xScale: 24, yScale: 24, color: rgb(.94, .90, 1), borderColor: rgb(.43, .22, .72), borderWidth: 1.6, rotate: degrees(-12), opacity: .92 });
+  page.drawEllipse({ x: 486, y: 139, xScale: 19, yScale: 19, borderColor: rgb(.43, .22, .72), borderWidth: .7, rotate: degrees(-12), opacity: .8 });
+  page.drawText("SE", { x: 479, y: 141, size: 10, font, color: rgb(.36, .12, .67), rotate: degrees(-12) });
+  page.drawText("VALIDADO", { x: 472, y: 128, size: 4.5, font, color: rgb(.36, .12, .67), rotate: degrees(-12) });
   page.drawEllipse({ x: 365, y: 111, xScale: 12, yScale: 12, color: teal, borderColor: gold, borderWidth: 1.2 });
   page.drawText("DIGITAL", { x: 357, y: 109, size: 4.5, font, color: rgb(1, 1, 1) });
   page.drawText(CERTIFICATE_DIRECTOR_NAME, { x: 391, y: 142, size: 14, font: signature, color: navy });

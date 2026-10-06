@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { generateCertificatePdf, generateCertificateRegisterPdf, generateEnrollmentReceiptPdf } from "./pdf";
+import { readFileSync } from "node:fs";
+
+const pdfSource = readFileSync(new URL("./pdf.ts", import.meta.url), "utf8");
+const verifierSource = readFileSync(new URL("../client/src/pages/Verificar.tsx", import.meta.url), "utf8");
 
 describe("server PDF downloads", () => {
   it("generates a clean certificate with one digital layer", async () => {
@@ -14,6 +18,10 @@ describe("server PDF downloads", () => {
     });
     expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
     expect(pdf.length).toBeGreaterThan(5000);
+    expect(pdfSource).toContain("opacity: .065");
+    expect(pdfSource).toContain('page.drawText("VALIDADO"');
+    expect(verifierSource).toContain("certificate-watermark");
+    expect(verifierSource).toContain("certificate-stamp");
   });
 
   it("generates a real enrollment receipt PDF", async () => {

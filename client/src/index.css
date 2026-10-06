@@ -637,3 +637,16 @@ html:not(.dark) .home-site-header + .loading-bar, html:not(.dark) .loading-bar {
 
 .vitrine-page #board-title, .vitrine-page .vitrine-tablet-screen h3 { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; text-shadow: 0 2px 5px rgba(0,0,0,.72) !important; }
 .vitrine-page .vitrine-tablet-screen p { color: #efffeb !important; }
+
+/* Certificado oficial: identidade única, marca-d'água e carimbo digital da Coordenação. */
+.certificate-sheet { background: radial-gradient(circle at 50% 47%, rgba(76,29,149,.045), transparent 30%), radial-gradient(circle at 78% 17%, rgba(243,189,8,.24), transparent 22%), linear-gradient(135deg, #fff 0%, #f7f2ff 54%, #fffdf5 100%); }
+.certificate-watermark { position: absolute; z-index: 0; top: 34%; left: 50%; width: 49%; transform: translate(-50%, -50%); opacity: .075; filter: saturate(.8) contrast(.95); pointer-events: none; }
+.certificate-heading, .certificate-title, .certificate-subtitle, .certificate-name, .certificate-copy, .certificate-course, .certificate-center-name, .certificate-meta-grid, .certificate-lower { position: relative; z-index: 1; }
+.certificate-name { display: inline-block; margin-inline: auto; padding: .18em .7em .22em; color: #a45b00 !important; -webkit-text-fill-color: #a45b00 !important; text-shadow: 0 1px 0 #fff; border-bottom: 4px solid #d4a900; font-size: clamp(1.3rem, 6vw, 2.25rem) !important; letter-spacing: .025em; }
+.certificate-course { color: #3b1b67 !important; -webkit-text-fill-color: #3b1b67 !important; }
+.certificate-signature { position: relative; }
+.certificate-stamp { position: absolute; top: -2.9rem; right: -1.5rem; display: grid; width: 3.7rem; height: 3.7rem; place-content: center; transform: rotate(-12deg); border: 2px solid rgba(109,40,217,.72); border-radius: 50%; color: #5b21b6; background: rgba(243,232,255,.74); box-shadow: inset 0 0 0 3px rgba(109,40,217,.18), 0 4px 8px rgba(76,29,149,.14); text-align: center; line-height: 1; }
+.certificate-stamp::before { content: ''; position: absolute; inset: .3rem; border: 1px dashed rgba(109,40,217,.72); border-radius: 50%; }
+.certificate-stamp b { position: relative; font-size: .9rem; letter-spacing: .08em; }
+.certificate-stamp span { position: relative; margin-top: .16rem; font-size: .34rem; font-weight: 900; letter-spacing: .08em; }
+@media (max-width: 560px) { .certificate-stamp { right: -.4rem; transform: rotate(-12deg) scale(.82); } }

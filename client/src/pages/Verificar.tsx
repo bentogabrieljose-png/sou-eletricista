@@ -66,6 +66,7 @@ export default function Verificar() {
           <>
             <div className="certificate-sheet mt-8">
               <div className="certificate-top-band" />
+              <img className="certificate-watermark" src={LOGO} alt="" aria-hidden="true" />
               <div className="certificate-heading">
                 <img src={LOGO} alt={CERTIFICATE_CENTER_NAME} />
                 <div><strong>{CERTIFICATE_CENTER_NAME.toUpperCase()}</strong><span>Centro de Formação Técnico Profissional</span></div>
@@ -80,7 +81,7 @@ export default function Verificar() {
               <strong className="certificate-center-name">{CERTIFICATE_CENTER_NAME.toUpperCase()}</strong>
               <p className="certificate-copy certificate-copy-small">O presente certificado comprova a sua participação, dedicação<br />e compromisso com a formação profissional.</p>
               <div className="certificate-meta-grid"><div><small>DATA DE CONCLUSÃO</small><strong>{formatDate(data.progress.completedAt)}</strong></div><div><small>CARGA HORÁRIA</small><strong>{CERTIFICATE_DURATION_LABEL}</strong></div><div><small>NOTA FINAL</small><strong>{data.progress.latestScore ?? 0}%</strong></div></div>
-              <div className="certificate-lower"><div className="certificate-validation"><div className="certificate-qr">{qrCode && <img src={qrCode} alt="QR Code de validação digital" />}</div><div><strong>VALIDAÇÃO DIGITAL OFICIAL</strong><span>Código: {data.progress.qrToken}</span><span>Verifique em: {CERTIFICATE_VERIFICATION_SITE || siteLabel}</span></div></div><div className="certificate-signature"><span>{CERTIFICATE_DIRECTOR_NAME}</span><small>Assinatura digital da Direção · {CERTIFICATE_CENTER_NAME}</small><b>Registo nº {formatCertificateRegistration(data.application.id, data.progress.certificateNumber)}</b></div></div>
+              <div className="certificate-lower"><div className="certificate-validation"><div className="certificate-qr">{qrCode && <img src={qrCode} alt="QR Code de validação digital" />}</div><div><strong>VALIDAÇÃO DIGITAL OFICIAL</strong><span>Código: {data.progress.qrToken}</span><span>Verifique em: {CERTIFICATE_VERIFICATION_SITE || siteLabel}</span></div></div><div className="certificate-signature"><div className="certificate-stamp" aria-label="Carimbo digital do centro"><b>SE</b><span>VALIDADO</span></div><span>{CERTIFICATE_DIRECTOR_NAME}</span><small>Assinatura digital da Direção · {CERTIFICATE_CENTER_NAME}</small><b>Registo nº {formatCertificateRegistration(data.application.id, data.progress.certificateNumber)}</b></div></div>
               {data.progress.latestScore === 100 && <div className="certificate-best-student-badge" aria-label="Medalha de melhor aluno: 100%"><i className="medal-ribbon medal-ribbon-left" /><i className="medal-ribbon medal-ribbon-right" /><span className="medal-disc"><b>★</b><em>100%</em></span><small>Melhor aluno</small></div>}
               <div className="certificate-bottom-band">FORMAÇÃO DE QUALIDADE · ELETRICIDADE É FUTURO</div>
             </div>
