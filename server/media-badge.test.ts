@@ -24,6 +24,8 @@ describe("Vitrine media and certificate distinction", () => {
     expect(coordination).toContain("Consistentes");
     expect(coordination).toContain("Revisão manual");
     expect(coordination).toContain("Divergências");
+    expect(coordination).toContain("comprovativo original fica disponível");
+    expect(coordination).toContain("Comprovativo não enviado");
     expect(home).toContain("posterUrl");
     expect(home).toContain("Vídeo otimizado");
   });
