@@ -10,6 +10,10 @@ import {
   isValidCertificateRegistration,
 } from "../shared/certificate";
 import { buildCertificateFallbackReport, certificatePreflightInput } from "./db";
+import { readFileSync } from "node:fs";
+
+const dbSource = readFileSync(new URL("./db.ts", import.meta.url), "utf8");
+const offlineWorker = readFileSync(new URL("../client/public/sw.js", import.meta.url), "utf8");
 
 describe("certificate model", () => {
   it("uses the official 72-hour duration and director-only signature", () => {
@@ -38,5 +42,18 @@ describe("certificate model", () => {
     expect(formatCertificateRegistration(42, "SE-CERT-2026-00042")).toBe("SE-REG-2026-00042");
     expect(isValidCertificateRegistration(formatCertificateRegistration(42), 42)).toBe(true);
     expect(isValidCertificateRegistration("SE-REG-2026-000043", 42)).toBe(false);
+  });
+
+  it("authorizes every passing score above 50 percent, including 51 percent", () => {
+    expect(dbSource).toContain("gt(studentProgress.latestScore, 50)");
+    expect(dbSource).not.toContain("gte(studentProgress.latestScore, 60)");
+  });
+
+  it("caches only the public catalogue offline", () => {
+    expect(offlineWorker).toContain("/api/trpc/public.courses");
+    expect(offlineWorker).toContain("/api/trpc/public.pricing");
+    expect(offlineWorker).toContain("/api/trpc/public.content");
+    expect(offlineWorker).toContain("if (url.pathname.startsWith(\"/api/\")) return;");
+    expect(offlineWorker).toContain("authenticated/student APIs are never cached");
   });
 });

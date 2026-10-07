@@ -79,3 +79,13 @@ createRoot(document.getElementById("root")!).render(
     </QueryClientProvider>
   </trpc.Provider>
 );
+
+// O cache offline é limitado ao shell e a dados públicos; nunca guarda sessões,
+// códigos de acesso, comprovativos, mensagens ou certificados privados.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(error => {
+      console.warn("[Offline] Não foi possível ativar a cache offline.", error);
+    });
+  }, { once: true });
+}

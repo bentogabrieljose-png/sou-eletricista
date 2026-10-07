@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, isNotNull, isNull, like, lt, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, gte, isNotNull, isNull, like, lt, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { nanoid } from "nanoid";
 import { execFile } from "node:child_process";
@@ -619,7 +619,7 @@ export async function authorizeCertificate(applicationId: number, approved: bool
   const certificateNumber = approved ? `${CERTIFICATE_REGISTRATION_PREFIX}-${new Date().getFullYear()}-${String(applicationId).padStart(6, "0")}` : null;
   if (approved && !isValidCertificateRegistration(certificateNumber, applicationId)) throw new Error("Não foi possível validar o número de registo sequencial.");
   const qrToken = nanoid(20);
-  const result = await db.update(studentProgress).set({ certificateStatus: approved ? "approved" : "rejected", certificateNumber, qrToken: approved ? qrToken : null, certificateUrl: approved ? `/student/certificate/${qrToken}` : null }).where(and(eq(studentProgress.applicationId, applicationId), eq(studentProgress.certificateStatus, "pending"), eq(studentProgress.examStatus, "passed"), gte(studentProgress.latestScore, 60)));
+  const result = await db.update(studentProgress).set({ certificateStatus: approved ? "approved" : "rejected", certificateNumber, qrToken: approved ? qrToken : null, certificateUrl: approved ? `/student/certificate/${qrToken}` : null }).where(and(eq(studentProgress.applicationId, applicationId), eq(studentProgress.certificateStatus, "pending"), eq(studentProgress.examStatus, "passed"), gt(studentProgress.latestScore, 50)));
   if (!result[0].affectedRows) throw new Error("Só é possível decidir certificados pendentes de alunos com nota superior a 50%.");
   return { certificateNumber, registrationValid: approved && isValidCertificateRegistration(certificateNumber, applicationId) };
 }
