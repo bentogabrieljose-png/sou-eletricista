@@ -104,7 +104,7 @@ export default function Home() {
                 <div className="relative aspect-square overflow-hidden rounded-[2rem] bg-[linear-gradient(145deg,#0f5bd3,#08245f)]">
                   <div className="absolute -right-10 -top-12 h-48 w-48 rounded-full bg-[#f3bd08]/80 blur-2xl" />
                   <div className="absolute -bottom-16 -left-8 h-64 w-64 rounded-full bg-[#174fbb] blur-2xl" />
-                  <img src={LOGO} alt="Logotipo oficial Sou Eletricista" className="absolute inset-8 h-[calc(100%-4rem)] w-[calc(100%-4rem)] object-contain drop-shadow-2xl" />
+                  <img src={LOGO} alt="Logotipo oficial Sou Eletricista" fetchPriority="high" decoding="async" className="absolute inset-8 h-[calc(100%-4rem)] w-[calc(100%-4rem)] object-contain drop-shadow-2xl" />
                   <div className="absolute bottom-5 left-5 right-5 rounded-2xl border border-white/20 bg-black/20 px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.18em] text-white backdrop-blur">Centro de Formação Técnico Profissional</div>
                 </div>
               </div>
@@ -144,7 +144,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="border-t border-blue-100 bg-[#071f51] py-12 text-white dark:border-white/10"><div className="container flex flex-col justify-between gap-8 md:flex-row md:items-end"><div className="flex items-center gap-4"><img src={LOGO} alt="Sou Eletricista" className="h-16 w-16 rounded-full object-cover" /><div><p className="font-display text-xl font-black">Sou Eletricista</p><p className="mt-1 text-sm text-blue-200">Aprender • Praticar • Conquistar</p></div></div><div className="flex flex-wrap gap-5 text-sm font-semibold text-blue-100"><Link href="/aluno">Área do aluno</Link><Link href="/coordenacao">Coordenação</Link><Link href="/contactos">Contactos</Link><a href="mailto:souelectricista@gmail.com">souelectricista@gmail.com</a></div></div></footer>
+      <footer className="border-t border-blue-100 bg-[#071f51] py-12 text-white dark:border-white/10"><div className="container flex flex-col justify-between gap-8 md:flex-row md:items-end"><div className="flex items-center gap-4"><img src={LOGO} alt="Sou Eletricista" loading="lazy" decoding="async" width="64" height="64" className="h-16 w-16 rounded-full object-cover" /><div><p className="font-display text-xl font-black">Sou Eletricista</p><p className="mt-1 text-sm text-blue-200">Aprender • Praticar • Conquistar</p></div></div><div className="flex flex-wrap gap-5 text-sm font-semibold text-blue-100"><Link href="/aluno">Área do aluno</Link><Link href="/coordenacao">Coordenação</Link><Link href="/contactos">Contactos</Link><a href="mailto:souelectricista@gmail.com">souelectricista@gmail.com</a></div></div></footer>
     </div>
   );
 }

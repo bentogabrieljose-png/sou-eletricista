@@ -1,21 +1,28 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Contactos from "./pages/Contactos";
-import Coordenacao from "./pages/Coordenacao";
 import Home from "./pages/Home";
-import Inscricao from "./pages/Inscricao";
-import Aluno from "./pages/Aluno";
-import NotFound from "./pages/NotFound";
-import Verificar from "./pages/Verificar";
-import SobreDiretor from "./pages/SobreDiretor";
-import SegundaVia from "./pages/SegundaVia";
-import Vitrine from "./pages/Vitrine";
+import { LoadingState } from "./components/PageLoader";
+
+const Contactos = lazy(() => import("./pages/Contactos"));
+const Coordenacao = lazy(() => import("./pages/Coordenacao"));
+const Inscricao = lazy(() => import("./pages/Inscricao"));
+const Aluno = lazy(() => import("./pages/Aluno"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Verificar = lazy(() => import("./pages/Verificar"));
+const SobreDiretor = lazy(() => import("./pages/SobreDiretor"));
+const SegundaVia = lazy(() => import("./pages/SegundaVia"));
+const Vitrine = lazy(() => import("./pages/Vitrine"));
+
+function RouteFallback() {
+  return <div className="min-h-[40vh]" aria-live="polite"><LoadingState label="A carregar a área…" /></div>;
+}
 
 function Router() {
-  return <Switch>
+  return <Suspense fallback={<RouteFallback />}><Switch>
     <Route path="/" component={Home} />
     <Route path="/vitrine" component={Vitrine} />
     <Route path="/inscricao" component={Inscricao} />
@@ -27,7 +34,7 @@ function Router() {
     <Route path="/segunda-via/:token" component={SegundaVia} />
     <Route path="/404" component={NotFound} />
     <Route component={NotFound} />
-  </Switch>;
+  </Switch></Suspense>;
 }
 
 export default function App() {

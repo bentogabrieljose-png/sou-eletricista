@@ -650,3 +650,20 @@ html:not(.dark) .home-site-header + .loading-bar, html:not(.dark) .loading-bar {
 .certificate-stamp b { position: relative; font-size: .9rem; letter-spacing: .08em; }
 .certificate-stamp span { position: relative; margin-top: .16rem; font-size: .34rem; font-weight: 900; letter-spacing: .08em; }
 @media (max-width: 560px) { .certificate-stamp { right: -.4rem; transform: rotate(-12deg) scale(.82); } }
+
+
+/* Performance: evitar repinturas contínuas do fundo fixo em dispositivos móveis e de baixo consumo. */
+@media (max-width: 1024px), (prefers-reduced-motion: reduce) {
+  html, body, .site-lightning-bg, .internal-photo-bg { background-attachment: scroll !important; }
+}
+
+/* Adiar a pintura de secções longas fora do primeiro ecrã sem alterar o seu layout. */
+.site-lightning-bg main > section:not(.home-hero),
+.vitrine-page main > section:not(:first-child),
+.student-shell main > section,
+.coordination-shell main > section { content-visibility: auto; contain-intrinsic-size: 1px 720px; }
+
+/* O modo Sem efeitos deve também evitar trabalho de animação e transição. */
+.effects-off *,
+.effects-off *::before,
+.effects-off *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
