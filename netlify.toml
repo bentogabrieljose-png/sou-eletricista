@@ -1,0 +1,16 @@
+[build]
+  command = "pnpm exec vite build"
+  publish = "dist/public"
+
+# O servidor Express/tRPC (pasta server/) não corre no alojamento estático do Netlify.
+# Pedidos à API devolvem 404 em vez do index.html, para não confundir o cliente tRPC.
+[[redirects]]
+  from = "/api/*"
+  to = "/404"
+  status = 404
+
+# Aplicação de página única (wouter): todas as rotas abrem o index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
