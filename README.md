@@ -26,6 +26,12 @@ pnpm test
 pnpm build
 ```
 
+## Deploy no Railway
+
+O ficheiro `railway.json` já define a instalação, o build, o arranque e o health check em `/api/health`. No Railway, crie um projeto a partir deste repositório GitHub e adicione o serviço oficial **MySQL** ao mesmo projeto. Copie a variável `DATABASE_URL` disponibilizada pelo MySQL para o serviço da aplicação e configure as restantes variáveis listadas em `.env.example` no painel **Variables**. Depois do primeiro deploy, execute `pnpm db:push` através do shell do serviço para gerar e aplicar o esquema da base de dados.
+
+O Railway deve fornecer a variável `PORT` automaticamente. O comando de produção é `pnpm start`; não use `pnpm dev` no serviço publicado. Os comprovativos, vídeos, imagens e PDFs continuam a precisar de um armazenamento S3/R2 compatível configurado através das variáveis do ambiente.
+
 ## Variáveis de ambiente
 
 Configure-as no ambiente de execução; não as coloque no GitHub:

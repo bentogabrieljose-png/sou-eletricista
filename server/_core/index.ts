@@ -28,6 +28,9 @@ app.use((req, res, next) => {
 
 registerOAuthRoutes(app);
 registerStorageProxy(app);
+app.get("/api/health", (_req, res) => {
+  res.status(200).json({ ok: true, service: "sou-eletricista", timestamp: new Date().toISOString() });
+});
 app.get("/api/download/certificate/:token", async (req, res) => {
   try {
     const certificate = await getCertificateByToken(req.params.token);
